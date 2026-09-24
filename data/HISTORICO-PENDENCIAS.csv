@@ -1,0 +1,18 @@
+medicao;item;codigo_emop;problema;detalhe
+MED01;15.32;15.005.0253-A;SOMA_NAO_BATE;soma_linhas=2 total_periodo=0 (linha 1702)
+MED02;17.5;17.018.0031-A;SOMA_NAO_BATE;soma_linhas=39838.0735 total_periodo=41690.5635 (linha 3596)
+MED02;18.2;18.002.0030-A;SOMA_NAO_BATE;soma_linhas=5 total_periodo=0 (linha 3772)
+MED03;4.6;04.020.0122-A;SOMA_NAO_BATE;soma_linhas=1105 total_periodo=1080 (linha 239)
+MED03;4.7;04.021.0010-A;SOMA_NAO_BATE;soma_linhas=97 total_periodo=72 (linha 254)
+MED03;5.30;05.006.0001-B;SOMA_NAO_BATE;soma_linhas=292.1 total_periodo=57.5 (linha 636)
+MED04;4.6;04.020.0122-A;soma_nao_bate;soma_linhas=255 total_periodo=125 (linha 256)
+MED04;4.7;04.021.0010-A;soma_nao_bate;soma_linhas=60 total_periodo=50 (linha 272)
+MED04;5.30;05.006.0001-B;soma_nao_bate;soma_linhas=107 total_periodo=23 (linha 683)
+MED08;14.4;14.002.0132-A;soma_linhas_diverge_do_total;soma=12.404 total=1.25 dif=11.154
+MED09;11.3;11.013.0075-A;soma_linhas_diverge_do_total;soma=89.377 total=89.28 dif=0.097
+MED09;18.48;18.029.0012-A;soma_linhas_diverge_do_total;soma=9 total=1 dif=8
+MED03;5.30;05.006.0001-B;validacao_cruzada_itens;extraido=292.1 boletim_realizado_periodo=57.5 dif=234.6 (memoria detalha 3 escolas mas o total oficial usou so 1)
+MED03;4.6;04.020.0122-A;validacao_cruzada_itens;extraido=1105 boletim_realizado_periodo=1080 dif=25 (linha E.M AMERICA ABDALLA fora do total oficial)
+MED03;4.7;04.021.0010-A;validacao_cruzada_itens;extraido=97 boletim_realizado_periodo=72 dif=25 (linha E.M AMERICA ABDALLA fora do total oficial)
+MED09;18.48;18.029.0012-A;validacao_cruzada_itens;extraido=9 boletim_realizado_periodo=1 dif=8 (9 bombas listadas na memoria, 1 UN paga)
+MED06;14.4;14.002.0132-A;validacao_cruzada_itens;extraido=0 boletim_realizado_periodo=0.8 dif=0.8 (memoria do bloco esta vazia com TOTAL=0, mas o boletim registra 0.8 M2)
