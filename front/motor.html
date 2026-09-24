@@ -1,0 +1,420 @@
+<title>Motor de Medição FPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEEEA; --surface:#FFFFFF; --surface2:#F6F7F4; --ink:#1D2630; --ink2:#4A5560; --muted:#77818A;
+  --line:#D3D8D2; --line2:#E4E7E2; --blue:#1F4E79; --blue2:#2D6AA3; --bluesoft:#E3ECF5;
+  --yellow:#F2B705; --yellowsoft:#FFF4CC; --red:#B3261E; --redsoft:#FBE3E1;
+  --green:#2E7D4F; --greensoft:#E1F1E7; --orange:#B45F06; --topbar:#1D2630; --topink:#C9D1D8;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif; --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8A949D;
+    --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1E3247;
+    --yellow:#F2B705; --yellowsoft:#3A3212; --red:#F08A82; --redsoft:#3D1F1D;
+    --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116; --topink:#8A949D;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8A949D;
+  --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1E3247;
+  --yellow:#F2B705; --yellowsoft:#3A3212; --red:#F08A82; --redsoft:#3D1F1D;
+  --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116; --topink:#8A949D;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.5 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--topbar);color:#fff}
+.top-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:21px;line-height:1}
+.brand small{display:block;font-family:var(--body);font-weight:400;font-size:11.5px;color:#AEB8C1;margin-top:2px}
+.stripe{height:5px;background:repeating-linear-gradient(-45deg,var(--yellow) 0 10px,#1D2630 10px 20px)}
+.tabs{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.tabs button{border:none;background:none;color:var(--topink);padding:8px 12px;border-radius:var(--r);font-weight:500;font-size:13.5px;cursor:pointer}
+.tabs button:hover{color:#fff;background:#2A3542}
+.tabs button.on{color:#1D2630;background:var(--yellow);font-weight:600}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 90px}
+h1{font-family:var(--display);font-weight:700;font-size:30px;margin:4px 0 2px}
+.sub{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.fig{background:var(--surface);padding:10px 14px}
+.fig b{display:block;font-family:var(--display);font-weight:700;font-size:28px;line-height:1.05}
+.fig span{color:var(--ink2);font-size:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.in{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 10px;font-size:14px;color:var(--ink)}
+input.in{flex:1;min-width:180px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--ink2)}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+:root[data-theme="dark"] .chip.on{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.on{color:#12171C}}
+.oslist{display:grid;gap:8px}
+.oscard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;cursor:pointer}
+.oscard:hover{border-color:var(--blue2)}
+.oscard .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.oscard .ref{font-family:var(--display);font-weight:700;font-size:19px;min-width:58px}
+.oscard .esc{font-weight:600}
+.oscard .sv{color:var(--ink2);font-size:13px;margin-top:3px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.tag.ok{background:var(--greensoft);color:var(--green)}
+.tag.pend{background:var(--yellowsoft);color:var(--orange)}
+.tag.semnum{background:var(--redsoft);color:var(--red)}
+.tag.med{background:var(--bluesoft);color:var(--blue)}
+.det{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px;cursor:default}
+.det .campo{font-size:12.5px;color:var(--ink2);margin:2px 0}
+.det .campo b{color:var(--ink)}
+.cands{display:grid;gap:6px;margin:10px 0}
+.cand{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--surface2)}
+.cand input[type=checkbox]{margin-top:4px;width:16px;height:16px}
+.cand .cd{font-family:var(--display);font-weight:600;font-size:16px;white-space:nowrap}
+.cand .ds{font-size:12.5px;color:var(--ink2)}
+.cand .uso{font-size:11.5px;color:var(--muted)}
+.cand.sel{border-color:var(--blue);background:var(--bluesoft)}
+.itemedit{border:1px solid var(--line);border-radius:var(--r);padding:10px;margin:6px 0;background:var(--surface)}
+.itemedit .tt{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.itemedit .tt .cd{font-family:var(--display);font-weight:700;font-size:17px}
+.tape{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tape input{flex:1;min-width:170px;border:2px solid var(--ink);border-radius:var(--r);padding:9px 10px;font:600 17px var(--display);letter-spacing:.02em;background:var(--surface);color:var(--ink)}
+.tape .res{font:700 24px var(--display);min-width:90px;text-align:right}
+.tape .res.bad{color:var(--red);font-size:14px;font-family:var(--body);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:var(--r);cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink)}
+.btn:hover{border-color:var(--ink2)}
+.btn.pri{background:var(--yellow);border-color:var(--yellow);color:#1D2630}
+.btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+:root[data-theme="dark"] .btn.blue{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.blue{color:#12171C}}
+.btn.ghost{border-style:dashed;color:var(--ink2)}
+.btn:disabled{opacity:.5;cursor:default}
+.estilo{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink2);margin-top:8px}
+.acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;color:var(--ink2);font-size:12px;border-bottom:2px solid var(--ink);padding:6px 8px;white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.tot td{border-top:2px solid var(--ink);font-weight:600;border-bottom:none}
+.hint{font-size:12px;color:var(--muted)}
+.notice{background:var(--yellowsoft);border:1px solid var(--yellow);border-radius:var(--r);padding:10px 12px;font-size:13px;margin-bottom:12px;color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);font-size:13.5px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (max-width:760px){h1{font-size:25px}.fig b{font-size:23px}}
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">MOTOR DE MEDIÇÃO<small>FP Vieira Engenharia · Educação FP.094 · MED 10</small></div>
+    <nav class="tabs" id="tabs">
+      <button data-v="conferencia" class="on">Conferência</button>
+      <button data-v="aba">Aba da medição</button>
+      <button data-v="estilos">Estilos aprendidos</button>
+    </nav>
+  </div>
+  <div class="stripe"></div>
+</header>
+<main id="app"><div class="empty">Carregando o motor…</div></main>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+"use strict";
+/* ================= estado ================= */
+const S = { os:[], base:[], jur:{}, byCod:{}, dec:{}, estilos:{}, view:"conferencia",
+  filtro:"pendentes", busca:"", open:null, draft:null, db:null, dl:null, uid:"", carregado:false, gravavel:null };
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf2 = new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const f2 = v => (v==null||isNaN(v))?"–":nf2.format(v);
+const brl = v => (!v||isNaN(v))?"–":"R$ "+nf2.format(v);
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2600)}
+const norm = t => String(t??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const osKey = o => ((o.grupo==="sem_numero"?"F-":"N-")+String(o.os)).replace(/[^A-Za-z0-9_-]/g,"-");
+
+/* ============ fita de cálculo (mesma regra do app de Medições) ============ */
+function evalExpr(str){
+  if(str==null||String(str).trim()==="") return NaN;
+  let s=String(str).replace(/×/g,"x").replace(/÷/g,"/").replace(/,/g,".").replace(/[xX]/g,"*").replace(/[^0-9.+\-*\/()]/g,"");
+  let i=0;const eat=c=>{if(s[i]===c){i++;return true}return false};
+  function num(){let st=i;while(i<s.length&&/[0-9.]/.test(s[i]))i++;if(st===i)throw 0;return parseFloat(s.slice(st,i))}
+  function fac(){if(eat("(")){const v=add();if(!eat(")"))throw 0;return v}if(eat("-"))return -fac();return num()}
+  function mul(){let v=fac();for(;;){if(eat("*"))v*=fac();else if(eat("/"))v/=fac();else return v}}
+  function add(){let v=mul();for(;;){if(eat("+"))v+=mul();else if(eat("-"))v-=mul();else return v}}
+  try{const v=add();return i===s.length&&isFinite(v)?v:NaN}catch(e){return NaN}
+}
+
+/* ================= o motor: propõe itens EMOP ================= */
+const STOP = new Set(["de","da","do","das","dos","e","em","no","na","nos","nas","com","para","por","a","o","as","os","um","uma","que","ate","apos"]);
+const toks = t => norm(t).split(/[^a-z0-9]+/).filter(w=>w.length>2&&!STOP.has(w));
+function propostas(o){
+  const codsSug = String(o.codsug||"").match(/\d{2}\.\d{3}(?:\.\d{4}-[AB])?/g) || [];
+  const estilo = S.estilos[slug(o.tipo)] || null;
+  const tx = new Set(toks((o.servico||"")+" "+(o.solicitado||"")+" "+(o.tipo||"")));
+  const scored = S.base.map(b=>{
+    let sc=0;
+    const dtoks=toks(b.desc);
+    let hit=0; for(const w of dtoks){ if(tx.has(w)) hit++; }
+    sc += hit*1.2;
+    if(codsSug.some(c=>b.cod.startsWith(c))) sc += 6;
+    if(estilo && estilo.cods && estilo.cods.includes(b.cod)) sc += 9;
+    const j=S.jur[b.cod]; if(j&&sc>0) sc += Math.log(1+j.n)*0.4;
+    return {b, sc};
+  }).filter(x=>x.sc>=2).sort((a,b)=>b.sc-a.sc).slice(0,4);
+  return {cands:scored, estilo, codsSug};
+}
+const slug = t => norm(t).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"geral";
+
+/* ================= abas / navegação ================= */
+document.querySelectorAll("#tabs button").forEach(bt=>bt.addEventListener("click",()=>{S.view=bt.dataset.v;draw()}));
+function setTabs(){document.querySelectorAll("#tabs button").forEach(bt=>bt.classList.toggle("on",bt.dataset.v===S.view))}
+
+/* ================= vistas ================= */
+function draw(){
+  setTabs();
+  const m=$("#app");
+  if(!S.carregado){m.innerHTML='<div class="empty">Carregando o motor…</div>';return}
+  if(S.view==="aba") return vAba(m);
+  if(S.view==="estilos") return vEstilos(m);
+  vConf(m);
+}
+
+function statusDe(o){const d=S.dec[osKey(o)];return d?d.status:"pendente"}
+
+function vConf(m){
+  const total=S.os.length;
+  const aprov=S.os.filter(o=>statusDe(o)==="aprovada").length;
+  const pend=total-aprov-S.os.filter(o=>statusDe(o)==="pulada").length;
+  const semnum=S.os.filter(o=>o.grupo==="sem_numero").length;
+  const q=norm(S.busca);
+  const lista=S.os.filter(o=>{
+    const st=statusDe(o);
+    if(S.filtro==="pendentes"&&st!=="pendente")return false;
+    if(S.filtro==="aprovadas"&&st!=="aprovada")return false;
+    if(S.filtro==="sem_numero"&&o.grupo!=="sem_numero")return false;
+    if(q&&!norm(o.os+" "+o.unidade+" "+o.servico+" "+o.solicitado+" "+o.tipo).includes(q))return false;
+    return true;
+  });
+  m.innerHTML=`
+  <h1>Conferência da MED 10</h1>
+  <p class="sub">O motor propõe o item EMOP e a conta a partir do histórico aceito das 9 medições; você confere, ajusta e aprova. Período 02/09 a 01/10/2026.</p>
+  ${S.gravavel===false?'<div class="notice">Modo leitura: as aprovações não estão sendo gravadas neste acesso. Abra pelo Claude com a conta da equipe para gravar.</div>':""}
+  <div class="figs">
+    <div class="fig"><b class="num">${total}</b><span>O.S. na medição</span></div>
+    <div class="fig"><b class="num">${aprov}</b><span>aprovadas ✓</span></div>
+    <div class="fig"><b class="num">${pend}</b><span>aguardando conferência</span></div>
+    <div class="fig"><b class="num">${semnum}</b><span>sem nº oficial</span></div>
+  </div>
+  <div class="bar">
+    <input class="in" id="busca" placeholder="Buscar escola, serviço ou nº da O.S." value="${esc(S.busca)}">
+    ${[["pendentes","Pendentes"],["aprovadas","Aprovadas"],["sem_numero","Sem nº oficial"],["todas","Todas"]].map(([v,r])=>`<button class="chip ${S.filtro===v?"on":""}" data-f="${v}">${r}</button>`).join("")}
+  </div>
+  <div class="oslist">${lista.map(cardOS).join("")||'<div class="empty">Nenhuma O.S. neste filtro.</div>'}</div>`;
+  $("#busca").addEventListener("input",e=>{S.busca=e.target.value;clearTimeout(vConf._t);vConf._t=setTimeout(()=>{const p=e.target.selectionStart;draw();const el=$("#busca");if(el){el.focus();el.setSelectionRange(p,p)}},250)});
+  document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{S.filtro=c.dataset.f;draw()}));
+  document.querySelectorAll(".oscard").forEach(c=>c.addEventListener("click",e=>{
+    if(e.target.closest(".det"))return;
+    const k=c.dataset.k; S.open=(S.open===k?null:k); S.draft=null; draw();
+  }));
+  wireDetalhe();
+}
+
+function cardOS(o){
+  const k=osKey(o), st=statusDe(o), aberto=S.open===k;
+  const tagSt = st==="aprovada"?'<span class="tag ok">✓ aprovada</span>':st==="pulada"?'<span class="tag med">pulada</span>':'<span class="tag pend">conferir</span>';
+  return `<div class="oscard" data-k="${k}">
+    <div class="hd"><span class="ref num">${esc(o.os)}</span><span class="esc">${esc(o.unidade)}</span>
+      ${tagSt}${o.grupo==="sem_numero"?'<span class="tag semnum">sem nº oficial</span>':""}${o.tipo?`<span class="tag med">${esc(o.tipo)}</span>`:""}</div>
+    <div class="sv">${esc(o.servico||o.solicitado||"—")}</div>
+    ${aberto?detalhe(o):""}
+  </div>`;
+}
+
+function detalhe(o){
+  const k=osKey(o), dec=S.dec[k];
+  if(!S.draft||S.draft.k!==k){
+    const p=propostas(o);
+    const itens=(dec&&dec.itens)?dec.itens.map(i=>({...i})):p.cands.filter((c,ix)=>ix===0||c.sc>=6).map(c=>({cod:c.b.cod, expressao:"", manter:false}));
+    S.draft={k, itens, cands:p.cands, estilo:p.estilo};
+  }
+  const D=S.draft;
+  const emDraft=cod=>D.itens.some(i=>i.cod===cod);
+  return `<div class="det">
+    ${o.solicitado?`<div class="campo"><b>Pedido do fiscal:</b> ${esc(o.solicitado)}</div>`:""}
+    ${o.materiais?`<div class="campo"><b>Material usado:</b> ${esc(o.materiais)}</div>`:""}
+    ${o.memoria?`<div class="campo"><b>Memória do campo:</b> ${esc(o.memoria)}</div>`:""}
+    <div class="campo"><b>Equipe:</b> ${esc(o.resp||"—")} · <b>Fiscal:</b> ${esc(o.fiscal||"—")} · <b>Conclusão:</b> ${esc(o.conclusao||"—")}</div>
+    ${D.estilo?`<div class="campo" style="color:var(--green)"><b>Estilo aprendido:</b> este tipo (${esc(o.tipo)}) costuma ser cobrado em ${D.estilo.cods.join(", ")}</div>`:""}
+    <h3 style="font-family:var(--display);font-size:17px;margin:12px 0 4px">O motor sugere (marque o que se aplica — pode ser mais de um):</h3>
+    <div class="cands">${D.cands.map(c=>{
+      const j=S.jur[c.b.cod];
+      return `<label class="cand ${emDraft(c.b.cod)?"sel":""}"><input type="checkbox" data-cod="${c.b.cod}" ${emDraft(c.b.cod)?"checked":""}>
+        <div><div class="cd num">${c.b.cod} · ${esc(c.b.unid)} · ${brl(c.b.preco)}</div>
+        <div class="ds">${esc(c.b.desc.slice(0,150))}${c.b.desc.length>150?"…":""}</div>
+        ${j?`<div class="uso">histórico: ${j.n} contas aceitas em ${j.nos} O.S. · ex.: ${esc(String(j.ex1||"").slice(0,90))}</div>`:'<div class="uso">sem histórico — item novo para o motor</div>'}
+        </div></label>`}).join("")||'<div class="hint">O motor não achou candidato com confiança. Use a busca manual abaixo.</div>'}
+    </div>
+    <div class="bar"><input class="in" id="addcod" placeholder="Adicionar outro item: digite código ou palavra da descrição" style="min-width:240px"><button class="btn" id="btnadd">Adicionar</button></div>
+    ${D.itens.map((it,ix)=>{
+      const b=S.byCod[it.cod]||{}; const q=evalExpr(it.expressao);
+      return `<div class="itemedit">
+        <div class="tt"><span class="cd num">${it.cod}</span><span class="hint">${esc((b.desc||"").slice(0,90))}</span></div>
+        <div class="tape"><input id="ex-${ix}" data-ix="${ix}" placeholder="a conta: 4,20 x 2,80 - 0,80 x 2,10 (ou só a quantidade)" value="${esc(it.expressao)}">
+        <span class="res num ${isNaN(q)&&it.expressao?"bad":""}">${it.expressao?(isNaN(q)?"conta incompleta":f2(q)+" "+(b.unid||"")):"–"}</span></div>
+        ${!isNaN(q)&&b.preco?`<div class="hint num">= ${brl(q*b.preco)}</div>`:""}
+      </div>`}).join("")}
+    <label class="estilo"><input type="checkbox" id="manter" ${D.itens.some(i=>i.manter)?"checked":""}> manter este estilo de cobrança para <b>&nbsp;${esc(o.tipo||"este tipo de serviço")}</b> (o motor aprende e o robô do Telegram confirma no grupo)</label>
+    <div class="acts">
+      <button class="btn pri" id="aprovar">✓ Aprovar e lançar na aba</button>
+      <button class="btn" id="pular">Pular por enquanto</button>
+      ${dec?'<button class="btn ghost" id="desfazer">Desfazer decisão</button>':""}
+    </div>
+  </div>`;
+}
+
+function wireDetalhe(){
+  const o=S.os.find(x=>osKey(x)===S.open); if(!o)return;
+  const D=S.draft;
+  document.querySelectorAll(".cand input").forEach(cb=>cb.addEventListener("change",()=>{
+    const cod=cb.dataset.cod;
+    if(cb.checked){ if(!D.itens.some(i=>i.cod===cod)) D.itens.push({cod, expressao:"", manter:false}); }
+    else D.itens=D.itens.filter(i=>i.cod!==cod);
+    draw(); wireFocus();
+  }));
+  document.querySelectorAll(".itemedit input[id^=ex-]").forEach(inp=>inp.addEventListener("input",()=>{
+    D.itens[+inp.dataset.ix].expressao=inp.value;
+    clearTimeout(wireDetalhe._t); wireDetalhe._t=setTimeout(()=>{const id=inp.id,p=inp.selectionStart;draw();wireFocus(id,p)},350);
+  }));
+  const add=$("#btnadd"); if(add) add.addEventListener("click",()=>{
+    const q=norm(($("#addcod")||{}).value||""); if(!q){toast("Digite um código ou palavra.");return}
+    const b=S.base.find(x=>norm(x.cod).startsWith(q))||S.base.find(x=>norm(x.desc).includes(q));
+    if(!b){toast("Não achei esse item na base do contrato.");return}
+    if(!D.itens.some(i=>i.cod===b.cod)) D.itens.push({cod:b.cod, expressao:"", manter:false});
+    draw(); wireFocus();
+  });
+  const ap=$("#aprovar"); if(ap) ap.addEventListener("click",()=>decidir(o,"aprovada"));
+  const pu=$("#pular"); if(pu) pu.addEventListener("click",()=>decidir(o,"pulada"));
+  const df=$("#desfazer"); if(df) df.addEventListener("click",async()=>{
+    if(S.db){ try{ await S.db.doc("decisoes/"+osKey(o)).delete(); }catch(e){toast("Não deu para desfazer agora.");return} }
+    delete S.dec[osKey(o)]; S.draft=null; toast("Decisão desfeita."); draw();
+  });
+}
+function wireFocus(id,p){ if(!id)return; const el=document.getElementById(id); if(el){el.focus(); if(p!=null)el.setSelectionRange(p,p)} }
+
+async function decidir(o,status){
+  const D=S.draft, k=osKey(o);
+  let itens=[];
+  if(status==="aprovada"){
+    itens=D.itens.filter(i=>i.cod&&!isNaN(evalExpr(i.expressao)));
+    if(!itens.length){toast("Preencha a conta de pelo menos um item antes de aprovar.");return}
+    itens=itens.map(i=>{const b=S.byCod[i.cod]||{};return {cod:i.cod, unid:b.unid||"", preco:b.preco||0, expressao:i.expressao.trim(), qtd:Math.round(evalExpr(i.expressao)*1e4)/1e4}});
+  }
+  const doc={os:String(o.os), unidade:o.unidade, grupo:o.grupo, tipo:o.tipo||"", status, itens, por:S.uid, em:new Date().toISOString()};
+  const manter=($("#manter")||{}).checked;
+  S.dec[k]=doc; S.open=null; S.draft=null;
+  if(S.db){
+    try{
+      await S.db.doc("decisoes/"+k).set(doc);
+      if(manter&&status==="aprovada") await S.db.doc("estilos/"+slug(o.tipo)).set({tipo:o.tipo||"geral", cods:itens.map(i=>i.cod), em:doc.em, por:S.uid});
+      S.gravavel=true;
+      toast(status==="aprovada"?"✓ Aprovada e gravada — já está na aba da medição.":"O.S. pulada.");
+    }catch(e){ S.gravavel=false; toast("Aprovada SÓ NESTA TELA — a gravação falhou (sem permissão?)."); }
+  } else { S.gravavel=false; toast("Aprovada só nesta tela — sem conexão de gravação."); }
+  if(manter&&status==="aprovada"){ S.estilos[slug(o.tipo)]={tipo:o.tipo||"geral", cods:itens.map(i=>i.cod)}; }
+  draw();
+}
+
+/* ================= aba da medição ================= */
+function vAba(m){
+  const decs=Object.values(S.dec).filter(d=>d.status==="aprovada");
+  const porItem=new Map();
+  let memoria=[];
+  for(const d of decs) for(const it of d.itens){
+    let r=porItem.get(it.cod); if(!r){const b=S.byCod[it.cod]||{};r={cod:it.cod,unid:it.unid||b.unid,preco:it.preco||b.preco||0,desc:b.desc||"",qtd:0,n:0};porItem.set(it.cod,r)}
+    r.qtd+=it.qtd; r.n++;
+    memoria.push({cod:it.cod, escola:d.unidade, os:d.os, expressao:it.expressao, qtd:it.qtd, unid:r.unid});
+  }
+  const rows=[...porItem.values()].sort((a,b)=>a.cod.localeCompare(b.cod));
+  const total=rows.reduce((a,b)=>a+b.qtd*b.preco,0);
+  memoria.sort((a,b)=>a.cod.localeCompare(b.cod)||String(a.escola).localeCompare(b.escola));
+  m.innerHTML=`
+  <h1>Aba da medição — MED 10</h1>
+  <p class="sub">Montada só com o que foi aprovado na conferência. O Edmar valida aqui antes de ir para a planilha oficial.</p>
+  <div class="figs">
+    <div class="fig"><b class="num">${decs.length}</b><span>O.S. aprovadas</span></div>
+    <div class="fig"><b class="num">${rows.length}</b><span>itens EMOP lançados</span></div>
+    <div class="fig"><b class="num">${total?brl(total):"–"}</b><span>valor proposto do período</span></div>
+  </div>
+  <section class="panel"><div class="tw"><table><thead><tr><th>Código EMOP</th><th>Descrição</th><th>Un.</th><th class="n">Qtd no período</th><th class="n">Preço (c/ BDI)</th><th class="n">Valor</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td class="num">${r.cod}</td><td>${esc(r.desc.slice(0,110))}</td><td>${esc(r.unid||"")}</td><td class="n">${f2(r.qtd)}</td><td class="n">${brl(r.preco)}</td><td class="n">${brl(r.qtd*r.preco)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">Aprove O.S. na conferência para a aba nascer.</td></tr>'}
+    ${rows.length?`<tr class="tot"><td colspan="5">TOTAL PROPOSTO</td><td class="n">${brl(total)}</td></tr>`:""}
+  </tbody></table></div></section>
+  <section class="panel"><h2 style="font-family:var(--display);font-size:19px;margin:0 0 8px">Memória de cálculo</h2><div class="tw"><table><thead><tr><th>Código</th><th>Escola</th><th>O.S</th><th>Conta</th><th class="n">Qtd</th></tr></thead><tbody>
+    ${memoria.map(l=>`<tr><td class="num">${l.cod}</td><td>${esc(l.escola)}</td><td class="num">${esc(l.os)}</td><td>${esc(l.expressao)}</td><td class="n">${f2(l.qtd)} ${esc(l.unid||"")}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">Sem lançamentos ainda.</td></tr>'}
+  </tbody></table></div></section>
+  <div class="acts"><button class="btn pri" id="baixar" ${rows.length&&S.dl?"":"disabled"}>Baixar planilha Excel</button>
+  <span class="hint">${S.dl?"":"O download fica disponível ao abrir pelo Claude."}</span></div>`;
+  const bx=$("#baixar"); if(bx) bx.addEventListener("click",()=>exportar(rows,memoria,total));
+}
+
+async function exportar(rows,memoria,total){
+  if(typeof XLSX==="undefined"){toast("Gerador de planilha não carregou. Recarregue a página.");return}
+  const wb=XLSX.utils.book_new();
+  const a=[["F. P. VIEIRA ENGENHARIA — CONTRATO 064/2025 · SEMEDE RIO DAS OSTRAS"],["MEDIÇÃO 10 — PROPOSTA DO MOTOR (conferida no painel; aprovação final do Edmar)"],[],["CÓDIGO EMOP","DESCRIÇÃO","UNID.","QTD NO PERÍODO","PREÇO C/ BDI","VALOR"]];
+  rows.forEach(r=>a.push([r.cod,r.desc,r.unid,Math.round(r.qtd*100)/100,r.preco,Math.round(r.qtd*r.preco*100)/100]));
+  a.push([],["","","","","TOTAL",Math.round(total*100)/100]);
+  const w1=XLSX.utils.aoa_to_sheet(a);w1["!cols"]=[{wch:16},{wch:60},{wch:6},{wch:14},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,w1,"MED 10 PROPOSTA");
+  const b=[["MEMÓRIA DE CÁLCULO — MED 10"],[],["CÓDIGO EMOP","ESCOLA","O.S","CONTA","QTD","UNID."]];
+  memoria.forEach(l=>b.push([l.cod,l.escola,l.os,l.expressao,l.qtd,l.unid]));
+  const w2=XLSX.utils.aoa_to_sheet(b);w2["!cols"]=[{wch:16},{wch:38},{wch:8},{wch:34},{wch:10},{wch:6}];XLSX.utils.book_append_sheet(wb,w2,"MEMORIA DE CALCULO");
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  try{await S.dl.save({filename:"MED10_proposta_motor.xlsx",data:new Uint8Array(buf)});toast("Planilha salva.")}
+  catch(e){toast(e&&e.code==="declined"?"Download cancelado.":"Não foi possível baixar agora.")}
+}
+
+/* ================= estilos aprendidos ================= */
+function vEstilos(m){
+  const es=Object.entries(S.estilos);
+  m.innerHTML=`
+  <h1>Estilos de cobrança aprendidos</h1>
+  <p class="sub">Cada vez que alguém aprova uma O.S. e marca "manter este estilo", o motor aprende: o mesmo tipo de serviço passa a vir com esses itens já sugeridos. É esta lista que o robô do Telegram vai confirmar no grupo antes de aplicar.</p>
+  <section class="panel"><div class="tw"><table><thead><tr><th>Tipo de serviço</th><th>Itens EMOP do estilo</th><th></th></tr></thead><tbody>
+  ${es.map(([k,e])=>`<tr><td><b>${esc(e.tipo)}</b></td><td class="num">${(e.cods||[]).join(" · ")}</td><td><button class="btn ghost" data-k="${k}">esquecer</button></td></tr>`).join("")||'<tr><td colspan="3" class="empty">Nenhum estilo aprendido ainda — aprove a primeira O.S. marcando "manter este estilo".</td></tr>'}
+  </tbody></table></div></section>
+  <div class="notice"><b>Integração com o robô do Telegram (próximo passo):</b> as decisões e os estilos ficam gravados no banco deste painel. O agente em Python da VPS lê essa lista, avisa no grupo — <i>"O.S. 2531, troca de fechadura na Tia Lola: mantenho a cobrança no item 14.007.0036-A?"</i> — e a resposta no Telegram volta para cá como aprovação.</div>`;
+  document.querySelectorAll("[data-k]").forEach(bt=>bt.addEventListener("click",async()=>{
+    const k=bt.dataset.k;
+    if(S.db){try{await S.db.doc("estilos/"+k).delete()}catch(e){toast("Não deu para esquecer agora.");return}}
+    delete S.estilos[k];toast("Estilo esquecido.");draw();
+  }));
+}
+
+/* ================= carga ================= */
+async function carregar(){
+  try{
+    const [os,base,jur]=await Promise.all([
+      fetch("data/os_med10.json").then(r=>r.json()),
+      fetch("data/base.json").then(r=>r.json()),
+      fetch("data/jurisprudencia.json").then(r=>r.json()),
+    ]);
+    S.os=os; S.base=base; base.forEach(b=>S.byCod[b.cod]=b); jur.forEach(j=>S.jur[j.cod]=j);
+    S.carregado=true; draw();
+  }catch(e){ $("#app").innerHTML='<div class="empty">Não consegui carregar os dados da medição. Recarregue a página.</div>'; }
+}
+carregar();
+(async()=>{
+  const C=window.claude; if(!C||typeof C.use!=="function"){S.gravavel=false;return}
+  C.use("downloads").then(d=>{S.dl=d; if(S.view==="aba")draw()});
+  C.use("user").then(async u=>{ if(u){ try{S.uid=await u.id()||""}catch(e){} } });
+  const db=await C.use("db");
+  if(!db){S.gravavel=false; if(S.carregado)draw(); return}
+  S.db=db;
+  db.collection("decisoes").onSnapshot(sn=>{S.dec={};sn.docs.forEach(d=>{S.dec[d.id]=d.data()});S.gravavel=true;if(S.carregado)draw()},()=>{S.gravavel=false;if(S.carregado)draw()});
+  db.collection("estilos").onSnapshot(sn=>{S.estilos={};sn.docs.forEach(d=>{S.estilos[d.id]=d.data()});if(S.carregado)draw()},()=>{});
+})();
+</script>
