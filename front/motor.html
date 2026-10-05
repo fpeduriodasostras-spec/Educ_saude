@@ -99,6 +99,12 @@ input.in{flex:1;min-width:180px}
 .foto img{width:84px;height:84px;object-fit:cover;display:block}
 .foto.sel{border-color:var(--yellow)}
 .foto input{position:absolute;top:4px;left:4px;width:16px;height:16px}
+.addwrap{margin:8px 0}
+.addlist{display:grid;gap:4px;margin-top:6px}
+.additem{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:var(--r);padding:8px 10px;cursor:pointer}
+.additem:hover{border-color:var(--blue);background:var(--bluesoft)}
+.additem .cd{font-family:var(--display);font-weight:600;font-size:15px}
+.additem .ds{font-size:12px;color:var(--ink2);display:block}
 .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px}
@@ -186,6 +192,19 @@ function propostas(o){
   return {cands:scored, estilo, codsSug};
 }
 const slug = t => norm(t).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"geral";
+
+/* busca ao vivo da base: as opções aparecem embaixo enquanto digita */
+function buscaItens(q){
+  const nq=norm(q); if(nq.length<2) return [];
+  const ws=toks(q);
+  return S.base.map(b=>{
+    let sc=0; const nd=norm(b.desc);
+    if(norm(b.cod).startsWith(nq)) sc+=100;
+    if(nd.includes(nq)) sc+=10;
+    for(const w of ws) if(nd.includes(w)) sc+=2;
+    return {b,sc};
+  }).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc||((S.jur[b.b?.cod]||{}).n||0)-((S.jur[a.b?.cod]||{}).n||0)).slice(0,8);
+}
 
 /* ================= abas / navegação ================= */
 document.querySelectorAll("#tabs button").forEach(bt=>bt.addEventListener("click",()=>{S.view=bt.dataset.v;draw()}));
@@ -279,7 +298,10 @@ function detalhe(o){
         ${j?`<div class="uso">histórico: ${j.n} contas aceitas em ${j.nos} O.S. · ex.: ${esc(String(j.ex1||"").slice(0,90))}</div>`:'<div class="uso">sem histórico — item novo para o motor</div>'}
         </div></label>`}).join("")||'<div class="hint">O motor não achou candidato com confiança. Use a busca manual abaixo.</div>'}
     </div>
-    <div class="bar"><input class="in" id="addcod" placeholder="Adicionar outro item: digite código ou palavra da descrição" style="min-width:240px"><button class="btn" id="btnadd">Adicionar</button></div>
+    <div class="addwrap">
+      <input class="in" id="addcod" style="width:100%" placeholder="Adicionar outro item: digite o código ou uma palavra (ex.: torneira) — as opções aparecem embaixo" value="${esc(D.addQ||"")}">
+      ${(D.addQ||"").trim().length>=2?`<div class="addlist">${buscaItens(D.addQ).map(r=>{const j=S.jur[r.b.cod];return `<button type="button" class="additem" data-cod="${r.b.cod}"><span class="cd num">${r.b.cod} · ${esc(r.b.unid)} · ${brl(r.b.preco)}</span><span class="ds">${esc(r.b.desc.slice(0,120))}${r.b.desc.length>120?"…":""}${j?` · histórico: ${j.n} contas`:""}</span></button>`}).join("")||'<div class="hint">Nada na base do contrato com esse texto.</div>'}</div>`:""}
+    </div>
     ${D.itens.map((it,ix)=>{
       const b=S.byCod[it.cod]||{}; const q=evalExpr(it.expressao);
       return `<div class="itemedit">
@@ -317,13 +339,16 @@ function wireDetalhe(){
   document.querySelectorAll(".foto input").forEach(cb=>cb.addEventListener("change",()=>{
     const fi=+cb.dataset.fi; if(cb.checked)D.fotos.add(fi); else D.fotos.delete(fi); draw();
   }));
-  const add=$("#btnadd"); if(add) add.addEventListener("click",()=>{
-    const q=norm(($("#addcod")||{}).value||""); if(!q){toast("Digite um código ou palavra.");return}
-    const b=S.base.find(x=>norm(x.cod).startsWith(q))||S.base.find(x=>norm(x.desc).includes(q));
-    if(!b){toast("Não achei esse item na base do contrato.");return}
-    if(!D.itens.some(i=>i.cod===b.cod)) D.itens.push({cod:b.cod, expressao:"", manter:false});
-    draw(); wireFocus();
+  const add=$("#addcod"); if(add) add.addEventListener("input",()=>{
+    D.addQ=add.value;
+    clearTimeout(wireDetalhe._q); wireDetalhe._q=setTimeout(()=>{const p=add.selectionStart;draw();wireFocus("addcod",p)},250);
   });
+  document.querySelectorAll(".additem").forEach(bt=>bt.addEventListener("click",()=>{
+    const cod=bt.dataset.cod;
+    if(!D.itens.some(i=>i.cod===cod)) D.itens.push({cod, expressao:"", manter:false});
+    D.addQ=""; toast("Item "+cod+" adicionado — preencha a conta.");
+    draw(); wireFocus("ex-"+(D.itens.length-1));
+  }));
   const ap=$("#aprovar"); if(ap) ap.addEventListener("click",()=>decidir(o,"aprovada"));
   const pu=$("#pular"); if(pu) pu.addEventListener("click",()=>decidir(o,"pulada"));
   const df=$("#desfazer"); if(df) df.addEventListener("click",async()=>{
