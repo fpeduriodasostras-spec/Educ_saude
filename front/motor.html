@@ -92,6 +92,13 @@ input.in{flex:1;min-width:180px}
 .btn.ghost{border-style:dashed;color:var(--ink2)}
 .btn:disabled{opacity:.5;cursor:default}
 .estilo{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink2);margin-top:8px}
+.itemedit .ds{font-size:12.5px;color:var(--ink2);margin:2px 0 8px}
+.itemedit .un{font-size:12px;color:var(--muted)}
+.fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
+.foto{position:relative;border:2px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;padding:0;background:none}
+.foto img{width:84px;height:84px;object-fit:cover;display:block}
+.foto.sel{border-color:var(--yellow)}
+.foto input{position:absolute;top:4px;left:4px;width:16px;height:16px}
 .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px}
@@ -147,6 +154,16 @@ function evalExpr(str){
   function mul(){let v=fac();for(;;){if(eat("*"))v*=fac();else if(eat("/"))v/=fac();else return v}}
   function add(){let v=mul();for(;;){if(eat("+"))v+=mul();else if(eat("-"))v-=mul();else return v}}
   try{const v=add();return i===s.length&&isFinite(v)?v:NaN}catch(e){return NaN}
+}
+
+/* a memória do campo já vem preenchida? então a fita nasce preenchida.
+   Só pré-preenche quando o texto é uma conta de verdade (números e
+   operadores) — "troca de 2 telhas e 1 calha" NÃO vira "21". */
+function exprDaMemoria(o){
+  for(const c of [o.memoria,o.qtde].map(v=>String(v||"").trim()).filter(Boolean)){
+    if(/^[\s\d.,xX×*+\-()\/=]+$/.test(c)){ const e=c.replace(/=.*$/,"").trim(); if(!isNaN(evalExpr(e))) return e; }
+  }
+  return "";
 }
 
 /* ================= o motor: propõe itens EMOP ================= */
@@ -239,8 +256,9 @@ function detalhe(o){
   const k=osKey(o), dec=S.dec[k];
   if(!S.draft||S.draft.k!==k){
     const p=propostas(o);
-    const itens=(dec&&dec.itens)?dec.itens.map(i=>({...i})):p.cands.filter((c,ix)=>ix===0||c.sc>=6).map(c=>({cod:c.b.cod, expressao:"", manter:false}));
-    S.draft={k, itens, cands:p.cands, estilo:p.estilo};
+    const pre=exprDaMemoria(o);
+    const itens=(dec&&dec.itens)?dec.itens.map(i=>({...i})):p.cands.filter((c,ix)=>ix===0||c.sc>=6).map((c,ix)=>({cod:c.b.cod, expressao:ix===0?pre:"", manter:false}));
+    S.draft={k, itens, cands:p.cands, estilo:p.estilo, fotos:new Set((dec&&dec.fotos_rdo)||[])};
   }
   const D=S.draft;
   const emDraft=cod=>D.itens.some(i=>i.cod===cod);
@@ -249,6 +267,8 @@ function detalhe(o){
     ${o.materiais?`<div class="campo"><b>Material usado:</b> ${esc(o.materiais)}</div>`:""}
     ${o.memoria?`<div class="campo"><b>Memória do campo:</b> ${esc(o.memoria)}</div>`:""}
     <div class="campo"><b>Equipe:</b> ${esc(o.resp||"—")} · <b>Fiscal:</b> ${esc(o.fiscal||"—")} · <b>Conclusão:</b> ${esc(o.conclusao||"—")}</div>
+    <div class="campo"><b>Fotos para o RDO:</b> ${(o.fotos&&o.fotos.length)?`toque para escolher as melhores (${D.fotos.size} escolhida${D.fotos.size===1?"":"s"})`:"as miniaturas aparecem aqui quando o banco de fotos for conectado"}</div>
+    ${(o.fotos&&o.fotos.length)?`<div class="fotos">${o.fotos.map((f,fi)=>`<label class="foto ${D.fotos.has(fi)?"sel":""}"><input type="checkbox" data-fi="${fi}" ${D.fotos.has(fi)?"checked":""} aria-label="incluir foto ${fi+1} no RDO"><img src="${esc(f.u)}" alt="Foto ${fi+1} da O.S." loading="lazy"></label>`).join("")}</div>`:""}
     ${D.estilo?`<div class="campo" style="color:var(--green)"><b>Estilo aprendido:</b> este tipo (${esc(o.tipo)}) costuma ser cobrado em ${D.estilo.cods.join(", ")}</div>`:""}
     <h3 style="font-family:var(--display);font-size:17px;margin:12px 0 4px">O motor sugere (marque o que se aplica — pode ser mais de um):</h3>
     <div class="cands">${D.cands.map(c=>{
@@ -263,10 +283,11 @@ function detalhe(o){
     ${D.itens.map((it,ix)=>{
       const b=S.byCod[it.cod]||{}; const q=evalExpr(it.expressao);
       return `<div class="itemedit">
-        <div class="tt"><span class="cd num">${it.cod}</span><span class="hint">${esc((b.desc||"").slice(0,90))}</span></div>
+        <div class="tt"><span class="cd num">${it.cod}</span><span class="un">${esc(b.unid||"?")} · ${brl(b.preco)}</span></div>
+        <div class="ds" title="${esc(b.desc||"")}">${esc((b.desc||"item fora da base do contrato").slice(0,160))}${(b.desc||"").length>160?"…":""}</div>
         <div class="tape"><input id="ex-${ix}" data-ix="${ix}" placeholder="a conta: 4,20 x 2,80 - 0,80 x 2,10 (ou só a quantidade)" value="${esc(it.expressao)}">
         <span class="res num ${isNaN(q)&&it.expressao?"bad":""}">${it.expressao?(isNaN(q)?"conta incompleta":f2(q)+" "+(b.unid||"")):"–"}</span></div>
-        ${!isNaN(q)&&b.preco?`<div class="hint num">= ${brl(q*b.preco)}</div>`:""}
+        <div class="bar" style="margin:6px 0 0">${o.memoria?`<button class="btn" data-mem="${ix}">⤵ usar a memória do campo</button>`:""}${!isNaN(q)&&b.preco?`<span class="hint num" style="align-self:center">= ${brl(q*b.preco)}</span>`:""}</div>
       </div>`}).join("")}
     <label class="estilo"><input type="checkbox" id="manter" ${D.itens.some(i=>i.manter)?"checked":""}> manter este estilo de cobrança para <b>&nbsp;${esc(o.tipo||"este tipo de serviço")}</b> (o motor aprende e o robô do Telegram confirma no grupo)</label>
     <div class="acts">
@@ -289,6 +310,12 @@ function wireDetalhe(){
   document.querySelectorAll(".itemedit input[id^=ex-]").forEach(inp=>inp.addEventListener("input",()=>{
     D.itens[+inp.dataset.ix].expressao=inp.value;
     clearTimeout(wireDetalhe._t); wireDetalhe._t=setTimeout(()=>{const id=inp.id,p=inp.selectionStart;draw();wireFocus(id,p)},350);
+  }));
+  document.querySelectorAll("[data-mem]").forEach(bt=>bt.addEventListener("click",()=>{
+    const ix=+bt.dataset.mem; D.itens[ix].expressao=String(o.memoria||"").trim(); draw(); wireFocus("ex-"+ix);
+  }));
+  document.querySelectorAll(".foto input").forEach(cb=>cb.addEventListener("change",()=>{
+    const fi=+cb.dataset.fi; if(cb.checked)D.fotos.add(fi); else D.fotos.delete(fi); draw();
   }));
   const add=$("#btnadd"); if(add) add.addEventListener("click",()=>{
     const q=norm(($("#addcod")||{}).value||""); if(!q){toast("Digite um código ou palavra.");return}
@@ -314,7 +341,7 @@ async function decidir(o,status){
     if(!itens.length){toast("Preencha a conta de pelo menos um item antes de aprovar.");return}
     itens=itens.map(i=>{const b=S.byCod[i.cod]||{};return {cod:i.cod, unid:b.unid||"", preco:b.preco||0, expressao:i.expressao.trim(), qtd:Math.round(evalExpr(i.expressao)*1e4)/1e4}});
   }
-  const doc={os:String(o.os), unidade:o.unidade, grupo:o.grupo, tipo:o.tipo||"", status, itens, por:S.uid, em:new Date().toISOString()};
+  const doc={os:String(o.os), unidade:o.unidade, grupo:o.grupo, tipo:o.tipo||"", status, itens, fotos_rdo:[...(D.fotos||[])], por:S.uid, em:new Date().toISOString()};
   const manter=($("#manter")||{}).checked;
   S.dec[k]=doc; S.open=null; S.draft=null;
   if(S.db){
