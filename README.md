@@ -23,6 +23,62 @@ ou editar. A regra de ouro: **o robô propõe, a pessoa aprova.**
 | `data/HISTORICO-OS-MEDIDAS.csv` | (gerado pela mineração) Cada linha de memória de cálculo já aceita: medição, item EMOP, escola, O.S., dimensões e total |
 | `data/JURISPRUDENCIA-EMOP.csv` | (gerado pela mineração) Como cada tipo de serviço costuma ser medido e aceito |
 
+## Painel "Motor de Medição FPV" (front/)
+
+`front/motor.html` é o painel de conferência (publicado como artifact do Claude). Desde 10/11/2026
+ele lê a medição do **banco central da VPS** (tabela `os_campo`, só leitura) por meio de
+`scripts/exporta_painel.py`, que roda pelo ssh sem gravar nada no servidor:
+
+    ssh arka "python3 - MED 12 2026-11-02 2026-12-01 os"    < scripts/exporta_painel.py > front/data/os_med12.json
+    ssh arka "python3 - MED 12 2026-11-02 2026-12-01 fotos" < scripts/exporta_painel.py > fotos.tsv
+    # fotos.tsv -> front/data/fotos/<id>.json (uma linha por O.S.: id TAB miniaturas)
+
+Para virar de medição, troque `ARQ_OS` no topo do script do painel (ou publique um
+`data/atual.json` = `{"arquivo": "data/os_....json"}`, que manda nele). As decisões ficam gravadas
+por medição (`decisoes/MED12-N-2950`). As miniaturas (`front/data/fotos/`) não vão para o git.
+
+**Saúde (FP.096, contrato 005/2026) — desde 11/11/2026.** O mesmo `motor.html` serve aos dois
+contratos: o arquivo da medição traz na `meta` qual base e histórico usar e as regras (Saúde sem nº
+oficial de O.S., histórico contado por unidade, material entra na sugestão). Peças da Saúde:
+
+    # base de preços + histórico, lidos das planilhas oficiais MED 01-05 (Drive G:), só leitura
+    tar cf - med01.xlsm ... med05.xlsm | ssh arka "python3 -c \"import base64,sys;sys.argv=['x','base'];exec(base64.b64decode('<scripts/base_saude.py em base64>'))\"" > front/data/base_saude.json
+    #   modos: base | jur (-> front/data/jur_saude.json) | check (soma de cada MED; bateu com o RESUMO)
+    # O.S. do mês (Saúde mede o mês fechado: MED 09 = 01/11 a 30/11)
+    ssh arka "python3 - MED 09 2026-11-01 2026-11-30 os saude" < scripts/exporta_painel.py > front/data/os_saude_med09.json
+
+O saldo da base da Saúde é contratado − soma do "no período" das MED lidas (a coluna "acumulado
+anterior" da MED 05 esquece a MED 04). As MED 06 em diante não estão no Drive G:.
+
+## Painel "Planilha Mestra FPV" (front/mestra.html) — modelo de 11/11/2026
+
+A Planilha Mestra do mês em forma de painel: as mesmas 10 abas do Excel (Conferência, O.S 2026,
+MED n em andamento / pronta / completar antes / sem nº, Fotos, Aguardando nº, Vinculadas,
+Reapresentar MED 9-10), com busca, filtro de status, ordenação, ficha da O.S. com fotos e
+"Baixar esta aba (Excel)". Os números saem do PRÓPRIO `gerar_mestra.py` da VPS: o
+`scripts/exporta_mestra.py` roda o gerador trocando só o `wb.save(...)` por JSON (nada gravado no
+servidor, banco em read-only), então o painel bate com o Excel que vai para a fiscalização:
+
+    ssh arka "python3 - MED 12 2026-11-02 2026-12-01" < scripts/exporta_mestra.py > front/data/mestra_med12.json
+
+As miniaturas das fotos são as mesmas do Motor (`front/data/fotos/<id>.json`, modo `fotos` do
+`exporta_painel.py`). Para virar de medição, troque `ARQ` no topo do script do painel.
+
+## Painel do Medidor (front/medidor.html) — v1 de 11/11/2026, Educação
+
+Um painel só para o medidor (Edmar), juntando a Planilha Mestra, o motor, a memória de cálculo e o
+relatório fotográfico. Abas: Conferência · **Medição** (lista de trabalho: O.S. da Mestra em andamento
++ sem nº, nas cores da Mestra do Renan — verde = lançada, amarelo = falta algo, azul = sugestão do
+motor, amarelo-claro = código lançado) · **Memória de cálculo** (das lançadas, no desenho da aba
+MEMÓRIA CÁLCULO oficial; baixa em Excel) · **Relatório fotográfico** (PDF no modelo oficial: cabeçalho
+da Secretaria, título por O.S., fotos VGA de 2 em 2) · O.S 2026 · Aguardando nº · Vinculadas ·
+Reapresentar · Estilos. A ficha da O.S. mostra tudo, deixa escolher as fotos do relatório, lançar
+código + conta e ir para a próxima. Lançamentos ficam no banco do próprio artifact (`decisoes/MED12-…`).
+
+    ssh arka "python3 - MED 12 2026-11-02 2026-12-01" < scripts/exporta_mestra.py > front/data/mestra_med12.json
+    ssh arka "python3 - MED 12 2026-11-02 2026-12-01 fotos edu 640" < scripts/exporta_painel.py > fotos.tsv
+    # fotos.tsv -> front/data/fotos_vga/<id>.json (640 px = "VGA", o tamanho do relatório oficial)
+
 ## Regras herdadas do projeto (não negociar sem o Renan)
 
 - Planilhas originais do contrato são **somente leitura**; todo produto nasce em arquivo novo.

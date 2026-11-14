@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel do Medidor FPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEEEA; --surface:#FFFFFF; --surface2:#F6F7F4; --ink:#1D2630; --ink2:#4A5560; --muted:#6B757E;
+  --line:#D3D8D2; --line2:#E4E7E2; --blue:#1F4E79; --blue2:#2D6AA3; --bluesoft:#DCEBFA;
+  --yellow:#F2B705; --yellowsoft:#FFF2CC; --lanc:#FFFBB8; --red:#B3261E; --redsoft:#FBE3E1;
+  --green:#2E7D4F; --greensoft:#D7EFDC; --orange:#9A5205; --topbar:#1D2630;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif; --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8F99A2;
+    --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1C2F44;
+    --yellow:#F2B705; --yellowsoft:#3A3212; --lanc:#38361A; --red:#F08A82; --redsoft:#3D1F1D;
+    --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8F99A2;
+  --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1C2F44;
+  --yellow:#F2B705; --yellowsoft:#3A3212; --lanc:#38361A; --red:#F08A82; --redsoft:#3D1F1D;
+  --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--body)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--topbar);color:#fff}
+.top-in{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:21px;line-height:1}
+.brand small{display:block;font-family:var(--body);font-weight:400;font-size:11.5px;color:#AEB8C1;margin-top:2px}
+.topr{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.carimbo{font-size:12px;color:#C9D1D8}
+.stripe{height:5px;background:repeating-linear-gradient(-45deg,var(--yellow) 0 10px,#1D2630 10px 20px)}
+.sheets{display:flex;gap:3px;overflow-x:auto;padding:7px 16px 0;background:var(--surface2);border-bottom:1px solid var(--line);scrollbar-width:thin}
+.sheets a{flex:none;padding:7px 12px 6px;border:1px solid var(--line);border-bottom:none;border-radius:6px 6px 0 0;background:var(--bg);color:var(--ink2);font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap}
+.sheets a:hover{color:var(--ink)}
+.sheets a.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:inset 0 3px 0 var(--blue)}
+.sheets a.main{font-weight:600}
+.sheets a .n{font-size:11px;color:var(--muted);margin-left:6px;font-variant-numeric:tabular-nums}
+main{max-width:1440px;margin:0 auto;padding:16px 16px 80px}
+h1{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.1;margin:4px 0 4px}
+h2{font-family:var(--display);font-weight:700;font-size:20px;margin:0 0 8px}
+h3{font-family:var(--display);font-weight:700;font-size:17px;margin:12px 0 6px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 6px}
+.fonte{font-size:12px;color:var(--muted);margin:0 0 14px}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.fig{background:var(--surface);padding:10px 14px;border:none;text-align:left;color:var(--ink)}
+button.fig{cursor:pointer} button.fig:hover{background:var(--bluesoft)}
+.fig b{display:block;font-family:var(--display);font-weight:700;font-size:28px;line-height:1.05}
+.fig span{color:var(--ink2);font-size:12px}
+.fig.ok b{color:var(--green)} .fig.at b{color:var(--orange)} .fig.ru b{color:var(--red)}
+.prog{height:10px;background:var(--surface2);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:0 0 6px}
+.prog i{display:block;height:100%;background:var(--green)}
+.legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin:0 0 10px}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid var(--line)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.in{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 10px;font-size:14px;color:var(--ink)}
+input.in{flex:1;min-width:200px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 11px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--ink2)}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+:root[data-theme="dark"] .chip.on{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.on{color:#12171C}}
+.hint{font-size:12px;color:var(--muted);margin:0 0 6px}
+.notice{background:var(--yellowsoft);border:1px solid var(--yellow);border-radius:var(--r);padding:10px 12px;font-size:13px;margin-bottom:12px}
+.tw{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+th{position:sticky;top:0;z-index:2;background:var(--surface2);text-align:left;font-weight:600;color:var(--ink2);font-size:11.5px;letter-spacing:.02em;border-bottom:2px solid var(--ink);padding:7px 8px;white-space:nowrap}
+th.so{cursor:pointer;user-select:none} th.so:hover{color:var(--ink)}
+th.sug{background:var(--bluesoft)} th.lan{background:var(--lanc)}
+td{padding:6px 8px;border-bottom:1px solid var(--line2);vertical-align:top;background:var(--surface)}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.grid td:first-child,.grid th:first-child{position:sticky;left:0;z-index:1;border-right:1px solid var(--line2)}
+.grid th:first-child{z-index:3}
+.grid tbody tr{cursor:pointer}
+.grid tbody tr:hover td{filter:brightness(.97)}
+:root[data-theme="dark"] .grid tbody tr:hover td{filter:brightness(1.15)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .grid tbody tr:hover td{filter:brightness(1.15)}}
+tr.lancada td{background:var(--greensoft)}
+tr.pulada td{color:var(--muted)}
+td.cfalta{background:var(--yellowsoft);color:var(--orange);font-weight:600}
+td.csug{background:var(--bluesoft)}
+td.clan{background:var(--lanc);font-weight:600}
+tr.lancada td.csug,tr.lancada td.clan{background:var(--greensoft)}
+.lt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-width:200px;max-width:330px}
+.md{min-width:150px;max-width:240px}
+.lnk{border:none;background:none;padding:0;font:700 14px var(--display);color:var(--blue);cursor:pointer;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.t-ok{background:var(--greensoft);color:var(--green)} .t-ex{background:var(--bluesoft);color:var(--blue)}
+.t-pe{background:var(--yellowsoft);color:var(--orange)} .t-ru{background:var(--redsoft);color:var(--red)}
+.t-cz{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.falta{color:var(--orange);font-weight:600} .pronta{color:var(--green);font-weight:600} .vazio{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:var(--r);cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.btn:hover{border-color:var(--ink2)}
+.btn.pri{background:var(--yellow);border-color:var(--yellow);color:#1D2630}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+:root[data-theme="dark"] .btn.ok{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.ok{color:#12171C}}
+.btn.ghost{border-style:dashed;color:var(--ink2)}
+.btn:disabled{opacity:.5;cursor:default}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.foto{position:relative;display:block;width:112px;height:112px;border:2px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto.sel{border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow)}
+.foto input{position:absolute;top:5px;left:5px;width:17px;height:17px}
+.foto a,.foto .k{position:absolute;bottom:3px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;padding:1px 6px;border-radius:4px;text-decoration:none}
+.foto a{right:3px} .foto .k{left:3px}
+.foto .sem{display:flex;align-items:center;justify-content:center;text-align:center;width:100%;height:100%;padding:6px}
+.ov{position:fixed;inset:0;background:rgba(10,14,18,.5);z-index:60;display:flex;justify-content:flex-end}
+.ov[hidden]{display:none}
+.dw{background:var(--surface);width:min(860px,100%);height:100%;overflow-y:auto;padding:0 18px 40px;box-shadow:-8px 0 24px rgba(0,0,0,.2)}
+.dwbar{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dwbar h2{margin:0;flex:1;min-width:220px}
+.dw dl{display:grid;grid-template-columns:170px 1fr;gap:5px 12px;font-size:13px;margin:10px 0}
+.dw dt{color:var(--ink2);font-weight:600;font-size:11.5px;letter-spacing:.02em;padding-top:2px}
+.dw dd{margin:0;white-space:pre-wrap;word-break:break-word}
+.bloco{border:1px solid var(--line);border-radius:var(--r);padding:12px;margin:12px 0;background:var(--surface)}
+.bloco.falt{background:var(--yellowsoft);border-color:var(--yellow)}
+.cands{display:grid;gap:6px;margin:8px 0}
+.cand{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--bluesoft);cursor:pointer}
+.cand input{margin-top:4px;width:16px;height:16px}
+.cand .cd{font:600 16px var(--display);white-space:nowrap}
+.cand .ds{font-size:12.5px;color:var(--ink2)}
+.cand .uso{font-size:11.5px;color:var(--muted)}
+.cand.sel{border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
+.addlist{display:grid;gap:4px;margin-top:6px}
+.additem{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:var(--r);padding:8px 10px;cursor:pointer}
+.additem:hover{border-color:var(--blue);background:var(--bluesoft)}
+.additem .cd{font:600 15px var(--display)} .additem .ds{font-size:12px;color:var(--ink2);display:block}
+.itemedit{border:1px solid var(--yellow);border-radius:var(--r);padding:10px;margin:8px 0;background:var(--lanc)}
+.itemedit .tt{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.itemedit .tt .cd{font:700 17px var(--display)}
+.itemedit .ds{font-size:12.5px;color:var(--ink2);margin:2px 0 8px}
+.tape{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tape input{flex:1;min-width:170px;border:2px solid var(--ink);border-radius:var(--r);padding:9px 10px;font:600 17px var(--display);letter-spacing:.02em;background:var(--surface);color:var(--ink)}
+.tape .res{font:700 24px var(--display);min-width:90px;text-align:right}
+.tape .res.bad{color:var(--red);font-size:14px;font-family:var(--body);font-weight:600}
+.estilo{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink2);margin-top:8px}
+.memblk{border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden;background:var(--surface)}
+.memblk .hd{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--line)}
+.memblk .hd b{font:700 16px var(--display)}
+.memblk .tot{padding:6px 12px;text-align:right;font-weight:600;border-top:1px solid var(--line)}
+.relcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:10px}
+.relcard .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.relcard .ref{font:700 19px var(--display)}
+.mini{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.mini img,.mini .ph{width:70px;height:52px;object-fit:cover;border-radius:4px;border:1px solid var(--line);background:var(--surface2)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);font-size:13.5px;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (max-width:640px){h1{font-size:24px}.fig b{font-size:23px}.dw{padding:0 12px 40px}.dw dl{grid-template-columns:1fr;gap:0}.dw dt{margin-top:8px}.tw{max-height:none}.carimbo{display:none}.foto{width:96px;height:96px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">PAINEL DO MEDIDOR<small id="brandsub">FP Vieira Engenharia · Educação FP.094</small></div>
+    <div class="topr"><span class="carimbo" id="carimbo"></span><button class="btn pri" id="acao" disabled>Baixar</button></div>
+  </div>
+  <div class="stripe"></div>
+  <nav class="sheets" id="sheets" aria-label="Abas do painel"></nav>
+</header>
+<main id="app"><div class="empty">Carregando o painel…</div></main>
+<div class="ov" id="ov" hidden><div class="dw" id="dw" role="dialog" aria-modal="true" aria-labelledby="dwt"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+"use strict";
+/* PAINEL DO MEDIDOR — a Planilha Mestra do mês + o motor de medição + memória de cálculo + relatório fotográfico.
+   Dados: data/mestra_medNN.json (scripts/exporta_mestra.py: roda o próprio gerar_mestra.py da VPS, só leitura),
+   data/base.json + data/jurisprudencia.json (contrato e histórico aceito), data/fotos_vga/<id>.json (fotos VGA).
+   Cores herdadas da Mestra do Renan: VERDE = lançada (vai na medição) · AMARELO = falta algo (risco de glosa)
+   · AZUL = sugestão do motor · AMARELO-CLARO = código lançado pelo medidor. */
+const ARQ = "data/mestra_med12.json";
+const FOTOS = "data/fotos_vga/";
+const CONTRATO = {
+  objeto:"SERVIÇO COMUM DE ENGENHARIA DE MANUTENÇÃO PREVENTIVA E CORRETIVA PREDIAL, COM ADEQUAÇÕES, ADAPTAÇÕES E MODERNIZAÇÕES, INCLUINDO OS PROJETOS E MATERIAIS NECESSÁRIOS, PARA AS DEMANDAS DOS IMÓVEIS PRÓPRIOS, UTILIZADOS PELA SECRETARIA MUNICIPAL DE EDUCAÇÃO, ESPORTE E LAZER - SEMEDE DO MUNICÍPIO DE RIO DAS OSTRAS - RJ.",
+  secretaria:"SECRETARIA MUNICIPAL DE EDUCAÇÃO, ESPORTE E LAZER - SEMEDE", contrato:"Contrato 064/2025", firma:"F. P. VIEIRA ENGENHARIA LTDA",
+};
+const S = { d:null, os:[], med:[], byId:{}, byRef:{}, idx:{}, base:[], byCod:{}, ordem:{}, jur:{}, dec:{}, estilos:{}, thumbs:{}, thumbsP:{},
+  view:"medicao", filtro:"alancar", busca:{}, status:{}, sort:{}, lim:{}, todasCols:false, prob:"", relTodas:false,
+  ficha:null, lista:[], db:null, dl:null, uid:"", gravavel:null, voltaFoco:null, atual:null, gerando:false };
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = t => String(t??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const nf2 = new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const f2 = v => (v==null||isNaN(v))?"–":nf2.format(v);
+const brl = v => (!v||isNaN(v))?"–":"R$ "+nf2.format(v);
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2800)}
+function wireFocus(id,p){ if(!id)return; const el=document.getElementById(id); if(el){el.focus(); if(p!=null) try{el.setSelectionRange(p,p)}catch(e){}} }
+
+/* ================= chaves da medição ================= */
+const M = () => S.d.meta;
+const medTag = () => M().med.replace(/\s+/g,"");
+const medNum = () => M().med.replace(/\D+/g,"");
+const daMed = o => o.ab.includes("and")||o.ab.includes("sem");
+const semNum = o => o.ab.includes("sem");
+const pronta = o => o.ab.includes("pronta") || (semNum(o) && o.si==="PRONTA");
+const osKey = o => ((semNum(o)?"F-":"N-")+String(o.os)).replace(/[^A-Za-z0-9_-]/g,"-");
+const decId = o => medTag()+"-"+osKey(o);
+const decDe = o => { const d=S.dec[decId(o)]; return d&&d.med===M().med?d:null; };
+const statusDe = o => { const d=decDe(o); return d?d.status:"pendente"; };
+const valorDec = d => (d&&d.itens||[]).reduce((a,i)=>a+(i.qtd||0)*(i.preco||0),0);
+const faltaDe = o => { const f=(o.fa||"").split(/,\s*(?![^()]*\))/).map(s=>s.trim()).filter(Boolean); if(semNum(o)) f.unshift("nº oficial"); return f; };
+
+/* ================= fita de cálculo ================= */
+function evalExpr(str){
+  if(str==null||String(str).trim()==="") return NaN;
+  let s=String(str).replace(/×/g,"x").replace(/÷/g,"/").replace(/,/g,".").replace(/[xX]/g,"*").replace(/[^0-9.+\-*\/()]/g,"");
+  let i=0;const eat=c=>{if(s[i]===c){i++;return true}return false};
+  function num(){let st=i;while(i<s.length&&/[0-9.]/.test(s[i]))i++;if(st===i)throw 0;return parseFloat(s.slice(st,i))}
+  function fac(){if(eat("(")){const v=add();if(!eat(")"))throw 0;return v}if(eat("-"))return -fac();return num()}
+  function mul(){let v=fac();for(;;){if(eat("*"))v*=fac();else if(eat("/"))v/=fac();else return v}}
+  function add(){let v=mul();for(;;){if(eat("+"))v+=mul();else if(eat("-"))v-=mul();else return v}}
+  try{const v=add();return i===s.length&&isFinite(v)?v:NaN}catch(e){return NaN}
+}
+/* só pré-preenche quando a memória do campo é uma conta de verdade ("troca de 2 telhas" NÃO vira 2) */
+function exprDaMemoria(o){
+  const c=String(o.mc||"").trim();
+  if(c&&/^[\s\d.,xX×*+\-()\/=]+$/.test(c)){ const e=c.replace(/=.*$/,"").trim(); if(!isNaN(evalExpr(e))) return e; }
+  return "";
+}
+
+/* ================= o motor: propõe itens EMOP (sugestão = azul) ================= */
+const STOP = new Set(["de","da","do","das","dos","e","em","no","na","nos","nas","com","para","por","a","o","as","os","um","uma","que","ate","apos"]);
+const toks = t => norm(t).split(/[^a-z0-9]+/).filter(w=>w.length>2&&!STOP.has(w));
+const slug = t => norm(t).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"geral";
+function codsDaSugestao(s){
+  const out=[]; let pre="";
+  for(const m of String(s||"").matchAll(/(\d{2}\.\d{3})(?:\.(\d{4}))?|\/(\d{4})\b/g)){
+    if(m[1]){ pre=m[1]; out.push(m[2]?pre+"."+m[2]:pre); } else if(m[3]&&pre){ out.push(pre+"."+m[3]); }
+  }
+  return out;
+}
+function propostas(o){
+  const codsSug=codsDaSugestao(o.cs), estilo=S.estilos[slug(o.ti)]||null;
+  const tx=new Set(toks((o.se||"")+" "+(o.so||"")+" "+(o.ti||"")));
+  const cands=S.base.map(b=>{
+    let sc=0; for(const w of toks(b.desc)) if(tx.has(w)) sc+=1.2;
+    if(codsSug.some(c=>b.cod.startsWith(c))) sc+=6;
+    if(estilo&&estilo.cods&&estilo.cods.includes(b.cod)) sc+=9;
+    const j=S.jur[b.cod]; if(j&&sc>0) sc+=Math.log(1+j.n)*0.4;
+    return {b,sc};
+  }).filter(x=>x.sc>=2).sort((a,b)=>b.sc-a.sc).slice(0,4);
+  return {cands, estilo};
+}
+function buscaItens(q){
+  const nq=norm(q); if(nq.length<2) return [];
+  const ws=toks(q);
+  return S.base.map(b=>{let sc=0;const nd=norm(b.desc);if(norm(b.cod).startsWith(nq))sc+=100;if(nd.includes(nq))sc+=10;for(const w of ws)if(nd.includes(w))sc+=2;return {b,sc}})
+    .filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc||((S.jur[b.b.cod]||{}).n||0)-((S.jur[a.b.cod]||{}).n||0)).slice(0,8);
+}
+const codTxt = b => b.cod+(b.item?` · item ${b.item}`:"");
+
+/* ================= abas ================= */
+const SHEETS = [
+  {k:"conferencia", t:"Conferência"},
+  {k:"medicao", t:"Medição {MED}", main:1},
+  {k:"memoria", t:"Memória de cálculo", main:1},
+  {k:"relatorio", t:"Relatório fotográfico", main:1},
+  {k:"todas", t:"O.S 2026", f:()=>true, tit:"PLANILHA MESTRA FP.094 — TODAS AS O.S. (espelho do sistema)"},
+  {k:"aguardando", t:"Aguardando nº", f:o=>o.ab.includes("aguard"), tit:"FICTÍCIAS (L-M-G-C-F-Q…) aguardando número oficial do fiscal"},
+  {k:"vinculadas", t:"Vinculadas"},
+  {k:"reapresentar", t:"Reapresentar MED 9-10"},
+  {k:"estilos", t:"Estilos aprendidos"},
+];
+const subst = t => String(t||"").replace(/\{MED\}/g,M().med);
+const sheet = k => SHEETS.find(s=>s.k===k)||SHEETS[1];
+function contagem(sh){
+  if(sh.k==="medicao") return S.med.length;
+  if(sh.k==="memoria") return lancadas().length;
+  if(sh.k==="relatorio") return listaRelatorio().length;
+  if(sh.f) return S.os.filter(sh.f).length;
+  if(sh.k==="vinculadas") return S.os.filter(o=>o.ab.includes("vinc")).length;
+  if(sh.k==="reapresentar") return S.d.reapresentar.length;
+  if(sh.k==="estilos") return Object.keys(S.estilos).length;
+  return null;
+}
+function drawSheets(){
+  $("#sheets").innerHTML=SHEETS.map(sh=>{const n=contagem(sh);return `<a href="#${sh.k}" class="${S.view===sh.k?"on":""} ${sh.main?"main":""}" ${S.view===sh.k?'aria-current="page"':""}>${esc(subst(sh.t))}${n!=null?`<span class="n">${n}</span>`:""}</a>`}).join("");
+  const on=$("#sheets a.on"); if(on) on.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+function rota(){ const h=(location.hash||"").replace("#",""); S.view=SHEETS.some(s=>s.k===h)?h:"medicao"; draw(); }
+window.addEventListener("hashchange",()=>{rota();window.scrollTo(0,0)});
+function draw(){
+  if(!S.d) return;
+  drawSheets();
+  const m=$("#app"), k=S.view;
+  if(k==="conferencia") vConf(m);
+  else if(k==="medicao") vMedicao(m);
+  else if(k==="memoria") vMemoria(m);
+  else if(k==="relatorio") vRelatorio(m);
+  else if(k==="vinculadas") vVinc(m);
+  else if(k==="reapresentar") vReap(m);
+  else if(k==="estilos") vEstilos(m);
+  else vTabela(m, sheet(k));
+  const a=$("#acao");
+  a.textContent = k==="relatorio"?"Gerar relatório fotográfico (PDF)":k==="memoria"?"Baixar memória de cálculo (Excel)":"Baixar esta aba (Excel)";
+  a.disabled = !S.dl || S.gerando || (k==="estilos");
+  a.title = S.dl?"":"O download fica disponível ao abrir pelo Claude";
+}
+function tagStatus(st){
+  const c=st==="Concluído"?"t-ok":st==="Executando"?"t-ex":st==="Pendente"?"t-pe":st==="Cancelada"?"t-cz":st?"t-ex":"t-cz";
+  return st?`<span class="tag ${c}">${esc(st)}</span>`:"";
+}
+const fonteHTML = () => `<p class="fonte">Dados do banco central (VPS) puxados em <b>${esc(M().gerado_em)}</b>, com as mesmas regras da Planilha Mestra do mês. Não edite a O.S. aqui: corrija no app e peça para atualizar. O que é palpite do motor aparece em <b>azul</b> como sugestão; vale o que o medidor lança.</p>`;
+const avisoGrava = () => S.gravavel===false?'<div class="notice">Modo leitura: os lançamentos não estão sendo gravados neste acesso. Abra pelo Claude com a conta da equipe para gravar.</div>':"";
+
+/* ================= MEDIÇÃO: a lista de trabalho do medidor ================= */
+const FILTROS = [
+  ["alancar","A lançar",o=>statusDe(o)==="pendente"],
+  ["lancadas","Lançadas ✓",o=>statusDe(o)==="aprovada"],
+  ["prontas","Prontas p/ apresentar",o=>pronta(o)],
+  ["completar","Completar antes",o=>!pronta(o)],
+  ["sem","Sem nº oficial",o=>semNum(o)],
+  ["puladas","Puladas",o=>statusDe(o)==="pulada"],
+  ["todas","Todas",()=>true],
+];
+const MCOLS = [
+  ["os","OS"],["un","UNIDADE"],["co","CONCLUSÃO"],["ex","RESPONSÁVEL"],["se","SERVIÇO EXECUTADO"],["mc","MEMÓRIA DO CAMPO"],
+  ["_fotos","FOTOS"],["_falta","O QUE FALTA"],["ti","TIPO (sugestão)","sug"],["cs","CÓDIGO (sugestão)","sug"],["_lanc","CÓDIGO LANÇADO","lan"],["_valor","VALOR"],
+];
+function mval(o,k){
+  if(k==="_fotos") return o.ft.length;
+  if(k==="_falta") return faltaDe(o).join(", ");
+  if(k==="_lanc"){ const d=decDe(o); return d&&d.status==="aprovada"?d.itens.map(i=>i.cod).join(" + "):d&&d.status==="pulada"?"(pulada)":""; }
+  if(k==="_valor"){ const d=decDe(o); return d&&d.status==="aprovada"?valorDec(d):0; }
+  return o[k]??"";
+}
+function chaveSort(o,k){
+  const v=mval(o,k);
+  if(k==="os"){const n=parseInt(v,10);return isNaN(n)?[1,String(v)]:[0,n]}
+  if(k==="en"||k==="co"){const p=String(v).split("/");return [0,p.length===3?p[2]+p[1]+p[0]:""]}
+  if(typeof v==="number") return [0,v];
+  return [0,norm(v)];
+}
+function ordena(rows,chave,getter){
+  const so=S.sort[chave]; if(!so) return rows;
+  return rows.slice().sort((a,b)=>{const x=getter(a,so.k),y=getter(b,so.k);return (x[0]-y[0]||(x[1]<y[1]?-1:x[1]>y[1]?1:0))*so.d});
+}
+function vMedicao(m){
+  const med=M().med, total=S.med.length;
+  const lanc=S.med.filter(o=>statusDe(o)==="aprovada"), pul=S.med.filter(o=>statusDe(o)==="pulada");
+  const valor=lanc.reduce((a,o)=>a+valorDec(decDe(o)),0);
+  const filtro=FILTROS.find(f=>f[0]===S.filtro)||FILTROS[0];
+  const q=norm(S.busca.medicao||"");
+  let rows=S.med.filter(o=>filtro[2](o)&&(!q||S.idx[o.id].includes(q)));
+  rows=ordena(rows,"medicao",chaveSort);
+  S.lista=rows.map(o=>o.id);
+  const so=S.sort.medicao;
+  m.innerHTML=`
+  <h1>Medição ${esc(med.replace("MED ",""))} — ${esc(M().ini.slice(0,5))} a ${esc(M().fim.slice(0,5))}</h1>
+  <p class="sub">A lista de trabalho do medidor: as O.S. que a Mestra põe na ${esc(med)} (em andamento + feitas sem nº). Clique numa O.S. para ver tudo, escolher as fotos do relatório e lançar o código EMOP com a conta — vira a memória de cálculo.</p>
+  ${fonteHTML()}${avisoGrava()}
+  <div class="figs">
+    <div class="fig"><b class="num">${total}</b><span>O.S. na medição</span></div>
+    <button class="fig ok" data-f="lancadas"><b class="num">${lanc.length}</b><span>lançadas ✓</span></button>
+    <button class="fig" data-f="alancar"><b class="num">${total-lanc.length-pul.length}</b><span>a lançar</span></button>
+    <button class="fig ok" data-f="prontas"><b class="num">${S.med.filter(pronta).length}</b><span>prontas p/ apresentar</span></button>
+    <button class="fig at" data-f="completar"><b class="num">${S.med.filter(o=>!pronta(o)).length}</b><span>completar antes (risco de glosa)</span></button>
+    <div class="fig"><b class="num" style="font-size:22px">${valor?brl(valor):"–"}</b><span>valor lançado até agora</span></div>
+  </div>
+  <div class="prog" title="${lanc.length} de ${total} lançadas"><i style="width:${total?Math.round(100*lanc.length/total):0}%"></i></div>
+  <div class="legenda"><span><i style="background:var(--greensoft)"></i>lançada (vai na medição)</span><span><i style="background:var(--yellowsoft)"></i>falta algo (risco de glosa)</span><span><i style="background:var(--bluesoft)"></i>sugestão do motor</span><span><i style="background:var(--lanc)"></i>código lançado pelo medidor</span></div>
+  <div class="bar">
+    <input class="in" id="busca" type="search" placeholder="Buscar nº, escola, serviço, equipe, memória…" value="${esc(S.busca.medicao||"")}" aria-label="Buscar na medição">
+  </div>
+  <div class="chips">${FILTROS.map(([k,t,f])=>`<button class="chip ${S.filtro===k?"on":""}" data-f="${k}">${esc(t)} (${S.med.filter(f).length})</button>`).join("")}</div>
+  <p class="hint num">${rows.length} O.S. neste filtro · clique no título da coluna para ordenar</p>
+  ${rows.length?`<div class="tw"><table class="grid"><thead><tr>${MCOLS.map(([k,t,c])=>`<th class="so ${c||""} ${k==="_valor"||k==="_fotos"?"n":""}" data-s="${k}" aria-sort="${so&&so.k===k?(so.d>0?"ascending":"descending"):"none"}">${esc(t)}${so&&so.k===k?(so.d>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead>
+  <tbody>${rows.map(linhaMed).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma O.S. neste filtro.</div>'}`;
+  const b=$("#busca");
+  b.addEventListener("input",()=>{S.busca.medicao=b.value;clearTimeout(vMedicao._t);vMedicao._t=setTimeout(()=>{const p=b.selectionStart;draw();wireFocus("busca",p)},220)});
+  m.querySelectorAll("[data-f]").forEach(x=>x.addEventListener("click",()=>{S.filtro=x.dataset.f;draw()}));
+  m.querySelectorAll("th.so").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.s,c=S.sort.medicao;S.sort.medicao=c&&c.k===k?(c.d>0?{k,d:-1}:null):{k,d:1};draw()}));
+  ligaLinhas(m);
+  S.atual={tipo:"medicao", rows};
+}
+function linhaMed(o){
+  const st=statusDe(o), d=decDe(o), fal=faltaDe(o);
+  return `<tr data-id="${o.id}" class="${st==="aprovada"?"lancada":st==="pulada"?"pulada":""}">
+    <td><button class="lnk" data-id="${o.id}">${esc(o.os)}</button></td>
+    <td><div class="md">${esc(o.un)}</div></td>
+    <td class="num">${esc(o.co)}</td>
+    <td>${esc(o.ex)}</td>
+    <td><div class="lt">${esc(o.se||o.so)}</div></td>
+    <td>${String(o.mc||"").trim()?`<div class="lt">${esc(o.mc)}</div>`:'<span class="vazio">—</span>'}</td>
+    <td class="n ${o.ft.length<3?"falta":""}">${o.ft.length}</td>
+    <td class="${fal.length?"cfalta":""}"><div class="lt" style="min-width:150px">${esc(fal.join(" · "))}</div></td>
+    <td class="csug">${esc(o.ti)}</td>
+    <td class="csug"><div class="md">${esc(o.cs)}</div></td>
+    <td class="clan">${st==="aprovada"?d.itens.map(i=>`<div class="num">${esc(i.cod)} <span class="vazio">${esc(f2(i.qtd))} ${esc(i.unid)}</span></div>`).join(""):st==="pulada"?'<span class="vazio">pulada</span>':""}</td>
+    <td class="n">${st==="aprovada"?brl(valorDec(d)):""}</td>
+  </tr>`;
+}
+function ligaLinhas(m){
+  m.querySelectorAll("tbody tr[data-id]").forEach(tr=>tr.addEventListener("click",e=>{ if(e.target.closest("a"))return; abrirFicha(+tr.dataset.id, e.target.closest("button")||tr); }));
+}
+
+/* ================= FICHA DA O.S. (tudo de uma O.S. + lançamento) ================= */
+function abrirFicha(id, deOnde){
+  S.voltaFoco=deOnde||document.activeElement; S.ficha={id, draft:null};
+  $("#ov").hidden=false; document.body.style.overflow="hidden";
+  $("#dw").scrollTop=0; renderFicha(); wireFocus("fechar");
+}
+function fechar(){ $("#ov").hidden=true; document.body.style.overflow=""; S.ficha=null; draw(); const f=S.voltaFoco; if(f&&document.contains(f)) try{f.focus()}catch(e){} }
+$("#ov").addEventListener("click",e=>{ if(e.target.id==="ov") fechar(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#ov").hidden) fechar(); });
+function carregaFotos(id){
+  if(!S.thumbsP[id]) S.thumbsP[id]=fetch(`${FOTOS}${id}.json`).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>Array.isArray(j)?j:[]).catch(()=>[]).then(j=>{S.thumbs[id]=j;return j});
+  return S.thumbsP[id];
+}
+function legendaPadrao(o){ return String(o.se||o.so||"").split(/\n/).map(s=>s.trim()).filter(Boolean).join(" ").slice(0,220); }
+function rascunho(o){
+  const dec=decDe(o), p=propostas(o), pre=exprDaMemoria(o);
+  const itens=(dec&&dec.itens&&dec.itens.length)?dec.itens.map(i=>({cod:i.cod,expressao:i.expressao,manter:false})):p.cands.filter((c,ix)=>ix===0||c.sc>=6).map((c,ix)=>({cod:c.b.cod,expressao:ix===0?pre:"",manter:false}));
+  return {itens, cands:p.cands, estilo:p.estilo, fotos:new Set((dec&&dec.fotos_rdo)||[]), legenda:(dec&&dec.legenda)||legendaPadrao(o), addQ:""};
+}
+function renderFicha(focoId, pos){
+  if(!S.ficha) return;
+  const o=S.byId[S.ficha.id], dw=$("#dw"), topo=dw.scrollTop;
+  const naMed=daMed(o), dec=decDe(o), st=statusDe(o);
+  if(naMed&&!S.ficha.draft) S.ficha.draft=rascunho(o);
+  const D=S.ficha.draft, ix=S.lista.indexOf(o.id);
+  const fal=faltaDe(o), th=S.thumbs[o.id];
+  const campos=[["UNIDADE",o.un],["FISCAL",o.fi],["CLASSIF",o.cl],["ENTRADA",o.en],["CONCLUSÃO",o.co],["RESPONSÁVEL",o.ex],["STATUS",o.st],["MEDIÇÃO (etiqueta no app)",o.me],
+    ["O QUE O FISCAL SOLICITOU",o.so],["SERVIÇO EXECUTADO",o.se],["MATERIAL (MANUAL)",o.ma],["MATERIAL ALMOXARIFADO (AUTO)",o.al],["MEMÓRIA DE CÁLCULO (campo)",o.mc],["ASSINADA",o.as],["VALIDAÇÃO ESCOLA",o.va]];
+  if(o.fr) campos.push(["REFERÊNCIA FICTÍCIA",o.fr]); if(o.pr) campos.push(["VINCULADA À OFICIAL",o.pr]);
+  dw.innerHTML=`
+  <div class="dwbar">
+    <h2 id="dwt">O.S. ${esc(o.os)} · ${esc(o.un)}</h2>
+    ${naMed&&S.lista.length?`<button class="btn" id="ant" ${ix<=0?"disabled":""}>◀ Anterior</button><span class="hint num" style="margin:0">${ix>=0?ix+1:"–"} de ${S.lista.length}</span><button class="btn" id="prox" ${ix<0||ix>=S.lista.length-1?"disabled":""}>Próxima ▶</button>`:""}
+    <button class="btn" id="fechar">Fechar</button>
+  </div>
+  <div style="margin-top:10px">${tagStatus(o.st)} ${st==="aprovada"?'<span class="tag t-ok">✓ lançada na medição</span>':st==="pulada"?'<span class="tag t-cz">pulada</span>':naMed?'<span class="tag t-pe">a lançar</span>':'<span class="tag t-cz">fora da '+esc(M().med)+'</span>'} ${pronta(o)?'<span class="tag t-ok">pronta p/ apresentar</span>':""} ${semNum(o)?'<span class="tag t-ru">sem nº oficial</span>':""} ${o.ab.includes("barrada")?'<span class="tag t-ru">já aprovada antes</span>':""}</div>
+  ${fal.length&&naMed?`<div class="bloco falt"><b>O que falta (risco de glosa):</b> ${esc(fal.join(" · "))}<div class="hint" style="margin:4px 0 0">Corrija no app (memória, fotos, executor) — na MED 9/10 a fiscalização glosou tudo que veio sem isso.</div></div>`:""}
+  <dl>${campos.map(([t,v])=>`<dt>${esc(t)}</dt><dd>${String(v??"").trim()?esc(v):'<span class="vazio">— nada lançado no app</span>'}</dd>`).join("")}</dl>
+  <h3>Fotos (${o.ft.length})${naMed?" — marque as que vão no relatório fotográfico":""}</h3>
+  ${o.ft.length?`<div class="fotos">${o.ft.map((u,i)=>{const t=Array.isArray(th)?th[i]:null;const sel=D&&D.fotos.has(i);
+    return `<label class="foto ${sel?"sel":""}">${naMed?`<input type="checkbox" data-fi="${i}" ${sel?"checked":""} aria-label="usar a foto ${i+1} no relatório">`:""}${t?`<img src="${esc(t)}" alt="Foto ${i+1} da O.S. ${esc(o.os)}" loading="lazy">`:`<span class="sem">${Array.isArray(th)?"miniatura indisponível":"carregando…"}</span>`}<span class="k">${i+1}</span><a href="${esc(u)}" target="_blank" rel="noopener">abrir</a></label>`}).join("")}</div>
+    ${naMed?`<p class="hint">${D.fotos.size?`${D.fotos.size} escolhida${D.fotos.size===1?"":"s"} para o relatório.`:`Nenhuma escolhida: o relatório usa as ${Math.min(6,o.ft.length)} primeiras.`}</p>`:""}`:'<p class="falta">Nenhuma foto no app.</p>'}
+  ${naMed?fichaMotor(o,D,dec):`<div class="notice">Esta O.S. não está na ${esc(M().med)} pelas regras da Mestra (etiqueta ou conclusão no período).</div>`}`;
+  wireFicha(o);
+  dw.scrollTop=topo;
+  if(focoId) wireFocus(focoId,pos);
+  if(o.ft.length&&!Array.isArray(th)) carregaFotos(o.id).then(()=>{ if(S.ficha&&S.ficha.id===o.id){ const a=document.activeElement,id=a&&a.id;let p=null;try{p=a.selectionStart}catch(e){} renderFicha(id,p);} });
+}
+function fichaMotor(o,D,dec){
+  const emD=cod=>D.itens.some(i=>i.cod===cod);
+  return `
+  <div class="bloco">
+    <h3 style="margin-top:0">Lançamento na medição</h3>
+    <label class="hint" for="legenda" style="display:block;margin:0 0 4px">Legenda da O.S. no relatório fotográfico</label>
+    <input class="in" id="legenda" style="width:100%" value="${esc(D.legenda)}">
+    ${D.estilo?`<p class="hint" style="color:var(--green);margin-top:8px"><b>Estilo aprendido:</b> ${esc(o.ti)} costuma ser cobrado em ${esc(D.estilo.cods.join(", "))}</p>`:""}
+    <h3>O motor sugere <span class="hint" style="font-family:var(--body);font-weight:400">(azul = palpite; marque o que se aplica)</span></h3>
+    <div class="cands">${D.cands.map(c=>{const j=S.jur[c.b.cod];return `<label class="cand ${emD(c.b.cod)?"sel":""}"><input type="checkbox" data-cod="${esc(c.b.cod)}" ${emD(c.b.cod)?"checked":""}>
+      <div><div class="cd num">${esc(codTxt(c.b))} · ${esc(c.b.unid)} · ${brl(c.b.preco)}</div><div class="ds">${esc(c.b.desc.slice(0,160))}${c.b.desc.length>160?"…":""}</div>
+      ${j?`<div class="uso">histórico: ${j.n} contas aceitas em ${j.nos} O.S. · ex.: ${esc(String(j.ex1||"").slice(0,90))}</div>`:'<div class="uso">sem histórico — item novo para o motor</div>'}</div></label>`}).join("")||'<p class="hint">O motor não achou candidato com confiança. Use a busca abaixo.</p>'}</div>
+    <input class="in" id="addcod" style="width:100%" placeholder="Adicionar outro item: digite o código ou uma palavra (ex.: torneira)" value="${esc(D.addQ)}">
+    ${D.addQ.trim().length>=2?`<div class="addlist">${buscaItens(D.addQ).map(r=>{const j=S.jur[r.b.cod];return `<button type="button" class="additem" data-cod="${esc(r.b.cod)}"><span class="cd num">${esc(codTxt(r.b))} · ${esc(r.b.unid)} · ${brl(r.b.preco)}</span><span class="ds">${esc(r.b.desc.slice(0,120))}${r.b.desc.length>120?"…":""}${j?` · histórico: ${j.n} contas`:""}</span></button>`}).join("")||'<p class="hint">Nada na base do contrato com esse texto.</p>'}</div>`:""}
+    ${D.itens.map((it,ix)=>{const b=S.byCod[it.cod]||{};const q=evalExpr(it.expressao);
+      return `<div class="itemedit"><div class="tt"><span class="cd num">${esc(b.cod?codTxt(b):it.cod)}</span><span class="hint" style="margin:0">${esc(b.unid||"?")} · ${brl(b.preco)}</span></div>
+        <div class="ds">${esc((b.desc||"item fora da base do contrato").slice(0,170))}</div>
+        <div class="tape"><input id="ex-${ix}" data-ix="${ix}" placeholder="a conta: 4,20 x 2,80 - 0,80 x 2,10 (ou só a quantidade)" value="${esc(it.expressao)}" aria-label="conta do item ${esc(it.cod)}">
+        <span class="res num ${isNaN(q)&&it.expressao?"bad":""}">${it.expressao?(isNaN(q)?"conta incompleta":f2(q)+" "+esc(b.unid||"")):"–"}</span></div>
+        <div class="acts" style="margin-top:6px">${String(o.mc||"").trim()?`<button class="btn" data-mem="${ix}">⤵ usar a memória do campo</button>`:""}<button class="btn ghost" data-rem="${ix}">tirar este item</button>${!isNaN(q)&&b.preco?`<span class="hint num" style="margin:0">= ${brl(q*b.preco)}</span>`:""}</div>
+      </div>`}).join("")}
+    <label class="estilo"><input type="checkbox" id="manter"> manter este estilo de cobrança para <b>&nbsp;${esc(o.ti||"este tipo de serviço")}</b></label>
+    <div class="acts">
+      <button class="btn ok" id="aprovar">✓ Lançar na medição e ir para a próxima</button>
+      <button class="btn" id="pular">Pular por enquanto</button>
+      ${dec?'<button class="btn ghost" id="desfazer">Desfazer lançamento</button>':""}
+    </div>
+  </div>`;
+}
+function wireFicha(o){
+  $("#fechar").addEventListener("click",fechar);
+  const ant=$("#ant"), prox=$("#prox");
+  if(ant) ant.addEventListener("click",()=>vaiPara(-1)); if(prox) prox.addEventListener("click",()=>vaiPara(1));
+  const D=S.ficha.draft; if(!D) return;
+  document.querySelectorAll("#dw .foto input").forEach(cb=>cb.addEventListener("change",()=>{const i=+cb.dataset.fi;if(cb.checked)D.fotos.add(i);else D.fotos.delete(i);renderFicha()}));
+  const lg=$("#legenda"); lg.addEventListener("input",()=>{D.legenda=lg.value});
+  document.querySelectorAll("#dw .cand input").forEach(cb=>cb.addEventListener("change",()=>{const cod=cb.dataset.cod;if(cb.checked){if(!D.itens.some(i=>i.cod===cod))D.itens.push({cod,expressao:"",manter:false})}else D.itens=D.itens.filter(i=>i.cod!==cod);renderFicha()}));
+  document.querySelectorAll("#dw .tape input").forEach(inp=>inp.addEventListener("input",()=>{D.itens[+inp.dataset.ix].expressao=inp.value;clearTimeout(wireFicha._t);wireFicha._t=setTimeout(()=>{renderFicha(inp.id,inp.selectionStart)},350)}));
+  document.querySelectorAll("#dw [data-mem]").forEach(bt=>bt.addEventListener("click",()=>{const i=+bt.dataset.mem;D.itens[i].expressao=String(o.mc||"").trim();renderFicha("ex-"+i)}));
+  document.querySelectorAll("#dw [data-rem]").forEach(bt=>bt.addEventListener("click",()=>{D.itens.splice(+bt.dataset.rem,1);renderFicha()}));
+  const add=$("#addcod"); add.addEventListener("input",()=>{D.addQ=add.value;clearTimeout(wireFicha._q);wireFicha._q=setTimeout(()=>renderFicha("addcod",add.selectionStart),250)});
+  document.querySelectorAll("#dw .additem").forEach(bt=>bt.addEventListener("click",()=>{const cod=bt.dataset.cod;if(!D.itens.some(i=>i.cod===cod))D.itens.push({cod,expressao:"",manter:false});D.addQ="";toast("Item "+cod+" adicionado — preencha a conta.");renderFicha("ex-"+(D.itens.length-1))}));
+  $("#aprovar").addEventListener("click",()=>decidir(o,"aprovada"));
+  $("#pular").addEventListener("click",()=>decidir(o,"pulada"));
+  const df=$("#desfazer"); if(df) df.addEventListener("click",async()=>{
+    if(S.db){try{await S.db.doc("decisoes/"+decId(o)).delete()}catch(e){toast("Não deu para desfazer agora.");return}}
+    delete S.dec[decId(o)]; S.ficha.draft=null; toast("Lançamento desfeito."); renderFicha();
+  });
+}
+function vaiPara(passo){
+  const ix=S.lista.indexOf(S.ficha.id), nx=S.lista[ix+passo];
+  if(nx==null){ toast(passo>0?"Esta é a última O.S. da lista.":"Esta é a primeira O.S. da lista."); return; }
+  S.ficha={id:nx, draft:null}; $("#dw").scrollTop=0; renderFicha(); wireFocus(passo>0?"prox":"ant");
+}
+async function decidir(o,status){
+  const D=S.ficha.draft, k=decId(o);
+  let itens=[];
+  if(status==="aprovada"){
+    itens=D.itens.filter(i=>i.cod&&!isNaN(evalExpr(i.expressao)));
+    if(!itens.length){toast("Preencha a conta de pelo menos um item antes de lançar.");return}
+    itens=itens.map(i=>{const b=S.byCod[i.cod]||{};return {cod:i.cod,item:b.item||"",unid:b.unid||"",preco:b.preco||0,expressao:i.expressao.trim(),qtd:Math.round(evalExpr(i.expressao)*1e4)/1e4}});
+  }
+  const fr=[...D.fotos].sort((a,b)=>a-b);
+  const doc={med:M().med, os:String(o.os), id_os:o.id, unidade:o.un, grupo:semNum(o)?"sem_numero":"com_numero", tipo:o.ti||"", status, itens,
+    fotos_rdo:fr, fotos_rdo_url:fr.map(i=>o.ft[i]).filter(Boolean), legenda:(D.legenda||"").trim(), por:S.uid, em:new Date().toISOString()};
+  const manter=($("#manter")||{}).checked;
+  S.dec[k]=doc;
+  if(S.db){
+    try{
+      await S.db.doc("decisoes/"+k).set(doc);
+      if(manter&&status==="aprovada") await S.db.doc("estilos/"+slug(o.ti)).set({tipo:o.ti||"geral",cods:itens.map(i=>i.cod),em:doc.em,por:S.uid});
+      S.gravavel=true; toast(status==="aprovada"?`✓ O.S. ${o.os} lançada (${brl(valorDec(doc))}).`:`O.S. ${o.os} pulada.`);
+    }catch(e){ S.gravavel=false; toast("Lançada SÓ NESTA TELA — a gravação falhou (sem permissão?)."); }
+  } else { S.gravavel=false; toast("Lançada só nesta tela — sem conexão de gravação."); }
+  if(manter&&status==="aprovada") S.estilos[slug(o.ti)]={tipo:o.ti||"geral",cods:itens.map(i=>i.cod)};
+  const ix=S.lista.indexOf(o.id), nx=S.lista[ix+1];
+  if(nx!=null){ S.ficha={id:nx,draft:null}; $("#dw").scrollTop=0; renderFicha(); wireFocus("prox"); }
+  else { S.ficha.draft=null; renderFicha(); toast("Fim da lista deste filtro."); }
+}
+
+/* ================= MEMÓRIA DE CÁLCULO (das O.S. lançadas, no layout da planilha oficial) ================= */
+function lancadas(){ return S.med.map(o=>[o,decDe(o)]).filter(([o,d])=>d&&d.status==="aprovada"); }
+function memoria(){
+  const porItem=new Map();
+  for(const [o,d] of lancadas()) for(const it of d.itens){
+    let r=porItem.get(it.cod);
+    if(!r){const b=S.byCod[it.cod]||{};r={cod:it.cod,item:it.item||b.item||"",desc:b.desc||"",unid:it.unid||b.unid||"",preco:it.preco||b.preco||0,linhas:[],qtd:0};porItem.set(it.cod,r)}
+    r.linhas.push({escola:d.unidade,os:d.os,expressao:it.expressao,qtd:it.qtd}); r.qtd+=it.qtd;
+  }
+  const itens=[...porItem.values()].sort((a,b)=>(S.ordem[a.cod]??9e9)-(S.ordem[b.cod]??9e9)||a.cod.localeCompare(b.cod));
+  itens.forEach(r=>r.linhas.sort((a,b)=>String(a.escola).localeCompare(String(b.escola),"pt-BR")||String(a.os).localeCompare(String(b.os),"pt-BR",{numeric:true})));
+  return itens;
+}
+function vMemoria(m){
+  const its=memoria(), total=its.reduce((a,r)=>a+r.qtd*r.preco,0), nos=lancadas().length;
+  m.innerHTML=`
+  <h1>Memória de cálculo — ${esc(M().med)}</h1>
+  <p class="sub">Montada só com as O.S. lançadas na aba Medição, item por item na ordem da planilha do contrato, com escola, O.S. e a conta — o mesmo desenho da aba MEMÓRIA CÁLCULO da medição oficial. O Edmar confere aqui e baixa em Excel.</p>
+  ${fonteHTML()}
+  <div class="figs">
+    <div class="fig"><b class="num">${nos}</b><span>O.S. lançadas</span></div>
+    <div class="fig"><b class="num">${its.length}</b><span>itens EMOP</span></div>
+    <div class="fig"><b class="num">${its.reduce((a,r)=>a+r.linhas.length,0)}</b><span>linhas de memória</span></div>
+    <div class="fig ok"><b class="num" style="font-size:22px">${total?brl(total):"–"}</b><span>valor proposto do período</span></div>
+  </div>
+  ${its.length?`<section class="panel"><h2>Resumo por item</h2><div class="tw" style="max-height:none"><table><thead><tr><th>ITEM</th><th>CÓDIGO EMOP</th><th>DESCRIÇÃO</th><th>UN.</th><th class="n">QTD NO PERÍODO</th><th class="n">PREÇO C/ BDI</th><th class="n">VALOR</th></tr></thead><tbody>
+    ${its.map(r=>`<tr><td>${esc(r.item)}</td><td class="num">${esc(r.cod)}</td><td><div class="lt" style="max-width:520px">${esc(r.desc)}</div></td><td>${esc(r.unid)}</td><td class="n">${f2(r.qtd)}</td><td class="n">${brl(r.preco)}</td><td class="n">${brl(r.qtd*r.preco)}</td></tr>`).join("")}
+    <tr><td colspan="6"><b>TOTAL PROPOSTO</b></td><td class="n"><b>${brl(total)}</b></td></tr></tbody></table></div></section>
+  <h2>Memória por item</h2>
+  ${its.map(r=>`<div class="memblk"><div class="hd"><b>${esc(r.item)}</b><b class="num">${esc(r.cod)}</b><span class="hint" style="margin:0;flex:1;min-width:200px">${esc(r.desc.slice(0,200))}</span><span class="tag t-ex">${esc(r.unid)}</span></div>
+    <div class="tw" style="max-height:none;border:none;border-radius:0"><table><thead><tr><th>ESCOLA</th><th>O.S</th><th>CONTA</th><th class="n">TOTAL</th></tr></thead><tbody>
+    ${r.linhas.map(l=>`<tr><td>${esc(l.escola)}</td><td class="num">${esc(l.os)}</td><td class="num">${esc(l.expressao)}</td><td class="n">${f2(l.qtd)} ${esc(r.unid)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="tot num">TOTAL MEDIDO NO PERÍODO = ${f2(r.qtd)} ${esc(r.unid)} · ${brl(r.qtd*r.preco)}</div></div>`).join("")}`
+  :'<div class="empty">Nenhuma O.S. lançada ainda. Lance na aba <a href="#medicao">Medição</a> e a memória nasce aqui.</div>'}`;
+  S.atual={tipo:"memoria", its, total};
+}
+/* conta pura de multiplicação (até 3 fatores) vai para as colunas COMPRIMENTO x ALTURA x QUANTIDADE da oficial */
+function fatores(expr){
+  const s=String(expr||"").replace(/,/g,".").replace(/×/g,"x").replace(/\*/g,"x").trim();
+  if(!/^\d+(\.\d+)?(\s*x\s*\d+(\.\d+)?){0,2}$/i.test(s)) return null;
+  return s.split(/\s*x\s*/i).map(Number);
+}
+function exportaMemoria(){
+  const {its,total}=S.atual, med=M().med, W=21;
+  const linha=()=>new Array(W).fill(null);
+  const aoa=[]; const put=(r,c,v)=>{r[c]=v;return r};
+  aoa.push(linha()); aoa.push(put(linha(),3,CONTRATO.objeto)); aoa.push(linha()); aoa.push(linha());
+  aoa.push(put(linha(),3,`PERIODO: ${M().ini} À ${M().fim}`)); aoa.push(linha());
+  const t=linha(); t[3]="Memória   de   Cálculo -"; t[9]=med.replace("MED","MEDIÇÃO"); aoa.push(t); aoa.push(linha());
+  for(const r of its){
+    aoa.push(linha());
+    const h=linha(); h[1]=r.item; h[2]=r.cod; h[3]=r.desc; h[19]=r.unid; h[20]=Math.round(r.qtd*100)/100; aoa.push(h);
+    aoa.push(linha());
+    const c=linha(); c[2]="ESCOLA"; c[3]="O.S"; c[5]="FATOR 1"; c[6]="X"; c[7]="FATOR 2"; c[8]="X"; c[9]="FATOR 3"; c[10]="="; c[11]="TOTAL"; aoa.push(c);
+    for(const l of r.linhas){
+      const x=linha(); x[2]=l.escola; x[3]=/^\d+$/.test(l.os)?Number(l.os):l.os;
+      const f=fatores(l.expressao);
+      if(f){ x[5]=f[0]; if(f.length>1){x[6]="X";x[7]=f[1]} if(f.length>2){x[8]="X";x[9]=f[2]} } else { x[5]=l.expressao; }
+      x[10]="="; x[11]=l.qtd; aoa.push(x);
+    }
+    const s=linha(); s[11]=Math.round(r.qtd*1e4)/1e4; s[12]=r.unid; aoa.push(s); aoa.push(linha());
+    const tt=linha(); tt[14]="TOTAL MEDIDO NO PERIODO = "; tt[15]=Math.round(r.qtd*1e4)/1e4; tt[16]=r.unid; aoa.push(tt);
+  }
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa); ws["!cols"]=[{wch:3},{wch:7},{wch:34},{wch:46},{wch:3},{wch:10},{wch:3},{wch:10},{wch:3},{wch:10},{wch:3},{wch:11},{wch:6}];
+  XLSX.utils.book_append_sheet(wb,ws,"MEMORIA CÁLCULO");
+  const res=[[`F. P. VIEIRA ENGENHARIA — ${CONTRATO.contrato.toUpperCase()} · SEMEDE RIO DAS OSTRAS`],[`${med} (${M().ini} a ${M().fim}) — PROPOSTA DO PAINEL DO MEDIDOR`],[],["ITEM","CÓDIGO EMOP","DESCRIÇÃO","UNID.","QTD NO PERÍODO","PREÇO C/ BDI","VALOR","Nº DE LINHAS"]];
+  its.forEach(r=>res.push([r.item,r.cod,r.desc,r.unid,Math.round(r.qtd*100)/100,r.preco,Math.round(r.qtd*r.preco*100)/100,r.linhas.length]));
+  res.push([],["","","","","","TOTAL",Math.round(total*100)/100]);
+  const w2=XLSX.utils.aoa_to_sheet(res); w2["!cols"]=[{wch:7},{wch:15},{wch:70},{wch:6},{wch:14},{wch:12},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,w2,"RESUMO");
+  return {wb, nome:`MEMORIA DE CALCULO - ${medTag()} - EDUCACAO - ${hoje()}.xlsx`};
+}
+const hoje = () => M().gerado_em.slice(0,10).split("/").reverse().join("-");
+
+/* ================= RELATÓRIO FOTOGRÁFICO ================= */
+function listaRelatorio(){ return S.med.filter(o=>o.ft.length&&(S.relTodas?statusDe(o)!=="pulada":statusDe(o)==="aprovada")); }
+function fotosDoRelatorio(o){ const d=decDe(o); const sel=d&&d.fotos_rdo&&d.fotos_rdo.length?d.fotos_rdo:[...Array(Math.min(6,o.ft.length)).keys()]; return sel.filter(i=>i<o.ft.length); }
+const legendaDe = o => { const d=decDe(o); return (d&&d.legenda)||legendaPadrao(o); };
+function vRelatorio(m){
+  const lista=listaRelatorio(), semFoto=S.med.filter(o=>!o.ft.length&&statusDe(o)==="aprovada");
+  const nf=lista.reduce((a,o)=>a+fotosDoRelatorio(o).length,0);
+  m.innerHTML=`
+  <h1>Relatório fotográfico — ${esc(M().med)}</h1>
+  <p class="sub">Cada O.S. vira um bloco com título, legenda e as fotos de 2 em 2 (tamanho VGA, como no modelo do relatório oficial). As fotos são as que o medidor marcou na ficha; se não marcou nenhuma, vão as 6 primeiras. O PDF sai pronto para mandar junto com a medição.</p>
+  ${fonteHTML()}
+  <div class="chips"><button class="chip ${S.relTodas?"":"on"}" data-r="0">Só as O.S. lançadas (${S.med.filter(o=>o.ft.length&&statusDe(o)==="aprovada").length})</button><button class="chip ${S.relTodas?"on":""}" data-r="1">Todas da medição com foto (${S.med.filter(o=>o.ft.length&&statusDe(o)!=="pulada").length})</button></div>
+  <div class="figs"><div class="fig"><b class="num">${lista.length}</b><span>O.S. no relatório</span></div><div class="fig"><b class="num">${nf}</b><span>fotos</span></div><div class="fig"><b class="num">${Math.max(1,Math.ceil(nf/6)+(lista.length?1:0))}</b><span>páginas (aprox.)</span></div></div>
+  ${semFoto.length?`<div class="notice">Lançadas SEM nenhuma foto no app (ficam fora do relatório): ${semFoto.map(o=>esc(o.os)).join(", ")}.</div>`:""}
+  ${lista.map(o=>{const fs=fotosDoRelatorio(o), d=decDe(o);return `<section class="relcard" data-rid="${o.id}"><div class="hd"><button class="lnk ref" data-id="${o.id}">O.S. ${esc(o.os)}</button><b>${esc(o.un)}</b>${statusDe(o)==="aprovada"?'<span class="tag t-ok">lançada</span>':'<span class="tag t-pe">não lançada</span>'}<span class="hint" style="margin:0">${fs.length} foto${fs.length===1?"":"s"}${d&&d.fotos_rdo&&d.fotos_rdo.length?" escolhida"+(fs.length===1?"":"s"):" (as primeiras — escolha na ficha)"}</span></div>
+    <div class="sub" style="margin:0">${esc(legendaDe(o))}</div><div class="mini" id="mi-${o.id}">${fs.map(()=>'<span class="ph"></span>').join("")}</div></section>`}).join("")||`<div class="empty">${S.relTodas?"Nenhuma O.S. da medição com foto.":"Nenhuma O.S. lançada com foto ainda. Lance na aba Medição — ou veja todas da medição no botão acima."}</div>`}`;
+  m.querySelectorAll("[data-r]").forEach(b=>b.addEventListener("click",()=>{S.relTodas=b.dataset.r==="1";draw()}));
+  m.querySelectorAll(".relcard .lnk").forEach(b=>b.addEventListener("click",()=>abrirFicha(+b.dataset.id,b)));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(!e.isIntersecting) return; io.unobserve(e.target); const id=+e.target.dataset.rid, o=S.byId[id];
+    carregaFotos(id).then(th=>{const el=document.getElementById("mi-"+id); if(el) el.innerHTML=fotosDoRelatorio(o).map(i=>th[i]?`<img src="${esc(th[i])}" alt="Foto ${i+1} da O.S. ${esc(o.os)}">`:'<span class="ph"></span>').join("");}); }),{rootMargin:"300px"});
+  m.querySelectorAll(".relcard").forEach(c=>io.observe(c));
+  S.atual={tipo:"relatorio", lista};
+}
+const pdfTxt = s => String(s??"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/…/g,"...").replace(/[^\x00-\xFF]/g,"");
+const dims = src => new Promise(res=>{const i=new Image();i.onload=()=>res([i.naturalWidth,i.naturalHeight]);i.onerror=()=>res(null);i.src=src;});
+async function geraRelatorio(){
+  const lista=S.atual.lista; if(!lista.length){toast("Não há O.S. no relatório.");return null}
+  if(!window.jspdf){toast("O gerador de PDF não carregou. Recarregue a página.");return null}
+  const {jsPDF}=window.jspdf, doc=new jsPDF({unit:"mm",format:"a4"});
+  const Wp=210,Hp=297,mx=12,lw=Wp-2*mx,bw=90,bh=67.5,gap=lw-2*bw,base=Hp-14;
+  const medOrd=`${medNum()}ª`, periodo=`${M().ini} à ${M().fim}`;
+  let y=14;
+  const capa=()=>{
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text(pdfTxt(CONTRATO.secretaria),Wp/2,y,{align:"center"}); y+=6;
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
+    const ob=doc.splitTextToSize(pdfTxt(CONTRATO.objeto),lw); doc.text(ob,Wp/2,y,{align:"center"}); y+=ob.length*3.8+2;
+    doc.text(pdfTxt(`${CONTRATO.contrato}  ·  Firma: ${CONTRATO.firma}`),Wp/2,y,{align:"center"}); y+=8;
+    doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.text("RELATÓRIO FOTOGRÁFICO",Wp/2,y,{align:"center"}); y+=7;
+    doc.setFontSize(10); doc.text(pdfTxt(`Medição: ${medOrd}     Período: ${periodo}`),Wp/2,y,{align:"center"}); y+=4;
+    doc.setDrawColor(150); doc.line(mx,y,Wp-mx,y); y+=6;
+  };
+  const novaPagina=()=>{ doc.addPage(); y=12; doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(110);
+    doc.text(pdfTxt(`RELATÓRIO FOTOGRÁFICO - MEDIÇÃO ${medOrd} (${periodo}) - ${CONTRATO.firma}`),mx,y); doc.setTextColor(0); y+=3; doc.setDrawColor(190); doc.line(mx,y,Wp-mx,y); y+=6; };
+  capa();
+  for(let n=0;n<lista.length;n++){
+    const o=lista[n], th=await carregaFotos(o.id), idx=fotosDoRelatorio(o).filter(i=>th[i]);
+    toast(`Montando o PDF: O.S. ${o.os} (${n+1} de ${lista.length})…`);
+    doc.setFontSize(9); const leg=doc.splitTextToSize(pdfTxt(legendaDe(o)),lw-4);
+    const cab=9+leg.length*4+5;
+    if(y+cab+bh+8>base) novaPagina();
+    doc.setFillColor(225,230,236); doc.rect(mx,y,lw,8,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.text(pdfTxt(`O.S. ${o.os} - ${String(o.un).toUpperCase()}`),mx+2,y+5.6); y+=11;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.text(leg,mx+2,y); y+=leg.length*4;
+    doc.setFontSize(7.5); doc.setTextColor(100); doc.text(pdfTxt(`Executado por: ${o.ex||"-"}   ·   Conclusão: ${o.co||"-"}   ·   Fiscal: ${o.fi||"-"}`),mx+2,y+1); doc.setTextColor(0); y+=5;
+    for(let k=0;k<idx.length;k+=2){
+      if(y+bh+7>base){ novaPagina(); doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.text(pdfTxt(`O.S. ${o.os} - ${String(o.un).toUpperCase()} (continuação)`),mx,y); doc.setFont("helvetica","normal"); y+=4; }
+      for(let c=0;c<2&&k+c<idx.length;c++){
+        const i=idx[k+c], src=th[i], x=mx+c*(bw+gap), dm=await dims(src);
+        doc.setDrawColor(170); doc.rect(x,y,bw,bh);
+        if(dm){ const r=Math.min((bw-2)/dm[0],(bh-2)/dm[1]), w=dm[0]*r, h=dm[1]*r; doc.addImage(src,"JPEG",x+(bw-w)/2,y+(bh-h)/2,w,h); }
+        doc.setFontSize(7.5); doc.text(pdfTxt(`Foto ${i+1} de ${o.ft.length} - O.S. ${o.os}`),x+bw/2,y+bh+3.6,{align:"center"});
+      }
+      y+=bh+7;
+    }
+    y+=4;
+  }
+  const tot=doc.getNumberOfPages();
+  for(let p=1;p<=tot;p++){ doc.setPage(p); doc.setFontSize(7.5); doc.setTextColor(120); doc.text(pdfTxt(`Página ${p} de ${tot}  ·  gerado pelo Painel do Medidor em ${new Date().toLocaleDateString("pt-BR")}`),Wp/2,Hp-7,{align:"center"}); doc.setTextColor(0); }
+  return {bytes:new Uint8Array(doc.output("arraybuffer")), nome:`RELATORIO FOTOGRAFICO - ${medTag()} - EDUCACAO - ${hoje()}.pdf`};
+}
+
+/* ================= CONFERÊNCIA ================= */
+const tipoProb = p => String(p).replace(/\(.*|[0-9]+/g,"").replace(/\s+/g," ").trim();
+function vConf(m){
+  const R=Object.fromEntries(S.d.resumo), med=M().med, n=k=>R[k]??0, probs=S.d.problemas;
+  const tipos={}; probs.forEach(p=>{const t=tipoProb(p[4]);tipos[t]=(tipos[t]||0)+1});
+  const lista=S.prob?probs.filter(p=>tipoProb(p[4])===S.prob):probs;
+  const lanc=lancadas().length, valor=lancadas().reduce((a,[o,d])=>a+valorDec(d),0), futura=Object.entries(S.d.med_futura||{});
+  const fig=(cls,v,t,k)=>`<button class="fig ${cls}" ${k?`data-go="${k}"`:""}><b class="num">${v}</b><span>${esc(t)}</span></button>`;
+  m.innerHTML=`
+  <h1>Conferência da ${esc(med)} (${esc(M().ini.slice(0,5))} a ${esc(M().fim.slice(0,5))})</h1>
+  ${fonteHTML()}
+  <div class="figs">
+    ${fig("",S.med.length,"O.S. na medição","medicao")}
+    ${fig("ok",lanc,"lançadas pelo medidor","medicao")}
+    ${fig("ok",n("   ... PRONTAS P/ APRESENTAR (nº + memória + 3 fotos + executor)"),"prontas (com nº)","medicao")}
+    ${fig("at",n("   ... COMPLETAR ANTES (risco de glosa)"),"completar antes","medicao")}
+    ${fig("",n(`${med} SEM Nº (fictícias feitas, sem nº oficial)`),"feitas sem nº oficial","medicao")}
+    ${fig("ok",valor?brl(valor):"–","valor lançado","memoria")}
+  </div>
+  ${futura.length?`<div class="notice"><b>Atenção:</b> O.S. marcadas em medição FUTURA: ${futura.map(([k,v])=>esc(k)+" ("+v+")").join(", ")}.</div>`:""}
+  <section class="panel"><h2>Resumo (igual à aba CONFERÊNCIA da Mestra)</h2><div class="tw" style="max-height:none"><table><tbody>
+    ${S.d.resumo.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n"><b>${esc(v)}</b></td></tr>`).join("")}</tbody></table></div></section>
+  <section class="panel"><h2>Itens de conferência (${probs.length})</h2>
+    <div class="chips"><button class="chip ${S.prob?"":"on"}" data-p="">Todos (${probs.length})</button>${Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`<button class="chip ${S.prob===t?"on":""}" data-p="${esc(t)}">${esc(t.toLowerCase())} (${c})</button>`).join("")}</div>
+    ${tabelaSimples(["ABA","OS","UNIDADE","EXECUTOR","PROBLEMA","O QUE FAZER"],lista,1)}</section>
+  <section class="panel"><h2>O.S. emitidas no período ainda sem baixa (${S.d.emitidas_sem_baixa.length})</h2><p class="hint">Não entram na ${esc(med)} enquanto não forem concluídas.</p>
+    ${tabelaSimples(["STATUS","OS","UNIDADE","FISCAL","O QUE O FISCAL SOLICITOU"],S.d.emitidas_sem_baixa,1)}</section>
+  <section class="panel"><h2>Serviços "Executando" sem número (${S.d.executando_sem_numero.length})</h2>
+    ${tabelaSimples(["STATUS","OS","UNIDADE","EXECUTOR","O QUE O FISCAL SOLICITOU"],S.d.executando_sem_numero,1)}</section>`;
+  m.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.go}));
+  m.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{S.prob=b.dataset.p;draw()}));
+  ligaLinhas(m);
+  S.atual={tipo:"arr", nome:"CONFERENCIA", cab:["ABA","OS","UNIDADE","EXECUTOR","PROBLEMA","O QUE FAZER"], linhas:lista, antes:S.d.resumo};
+}
+function tabelaSimples(cab, linhas, colRef){
+  if(!linhas.length) return '<div class="empty">Nada aqui.</div>';
+  return `<div class="tw"><table class="grid"><thead><tr>${cab.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>
+    ${linhas.map(l=>{const o=S.byRef[String(l[colRef])];return `<tr ${o?`data-id="${o.id}"`:""}>${l.map((v,i)=>i===colRef?`<td>${o?`<button class="lnk" data-id="${o.id}">${esc(v)}</button>`:esc(v)}</td>`:(cab[i]==="STATUS")?`<td>${tagStatus(v)}</td>`:`<td><div class="${String(v).length>60?"lt":""}">${esc(v)}</div></td>`).join("")}</tr>`}).join("")}
+  </tbody></table></div>`;
+}
+
+/* ================= abas de consulta (espelho da Mestra) ================= */
+const COLS = [
+  ["os","OS",1],["un","UNIDADE",1],["fi","FISCAL",0],["cl","CLASSIF",0],["en","ENTRADA",0],["co","CONCLUSÃO",1],["ex","RESPONSÁVEL",1],["st","STATUS",1],["me","MEDIÇÃO",1],
+  ["so","O QUE O FISCAL SOLICITOU",0],["se","SERVIÇO EXECUTADO",1],["ma","MATERIAL (MANUAL)",0],["al","MATERIAL ALMOXARIFADO (AUTO)",0],["qi","QTDE ITENS",0],
+  ["mc","MEMÓRIA DE CÁLCULO",1],["_fotos","FOTOS",1],["as","ASSINADA",0],["va","VALIDAÇÃO ESCOLA",0]];
+const LONGAS=new Set(["so","se","ma","al","mc","va"]);
+const val=(o,k)=>k==="_fotos"?o.ft.length:(o[k]??"");
+function vTabela(m, sh){
+  const all=S.os.filter(sh.f), q=norm(S.busca[sh.k]||""), st=S.status[sh.k]||"", lim=S.lim[sh.k]||150;
+  let rows=all.filter(o=>(!st||o.st===st)&&(!q||S.idx[o.id].includes(q)));
+  rows=ordena(rows,sh.k,(o,k)=>{const v=val(o,k);if(k==="os"){const n=parseInt(v,10);return isNaN(n)?[1,String(v)]:[0,n]}if(k==="en"||k==="co"){const p=String(v).split("/");return [0,p.length===3?p[2]+p[1]+p[0]:""]}return typeof v==="number"?[0,v]:[0,norm(v)]});
+  const cols=S.todasCols?COLS:COLS.filter(c=>c[2]), so=S.sort[sh.k], sts=[...new Set(all.map(o=>o.st).filter(Boolean))].sort();
+  m.innerHTML=`<h1>${esc(subst(sh.t))}</h1><p class="sub">${esc(subst(sh.tit))}</p>${fonteHTML()}
+  <div class="bar"><input class="in" id="busca" type="search" placeholder="Buscar nº, escola, serviço, equipe…" value="${esc(S.busca[sh.k]||"")}" aria-label="Buscar nesta aba">
+    <select class="in" id="fst" aria-label="Filtrar por status"><option value="">Todos os status (${all.length})</option>${sts.map(s=>`<option value="${esc(s)}" ${st===s?"selected":""}>${esc(s)} (${all.filter(o=>o.st===s).length})</option>`).join("")}</select>
+    <label class="chk"><input type="checkbox" id="tcols" ${S.todasCols?"checked":""}> todas as colunas</label></div>
+  <p class="hint num">${rows.length===all.length?all.length:`${rows.length} de ${all.length}`} O.S. · clique na linha para ver a ficha e as fotos</p>
+  ${rows.length?`<div class="tw"><table class="grid"><thead><tr>${cols.map(c=>`<th class="so" data-s="${c[0]}" aria-sort="${so&&so.k===c[0]?(so.d>0?"ascending":"descending"):"none"}">${esc(c[1])}${so&&so.k===c[0]?(so.d>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>
+  ${rows.slice(0,lim).map(o=>`<tr data-id="${o.id}">${cols.map(([k])=>{const v=val(o,k);return k==="os"?`<td><button class="lnk" data-id="${o.id}">${esc(v)}</button></td>`:k==="st"?`<td>${tagStatus(v)}</td>`:k==="_fotos"?`<td class="n ${v<3?"falta":""}">${v}</td>`:`<td><div class="${LONGAS.has(k)?"lt":k==="un"?"md":""}">${esc(v)}</div></td>`}).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma O.S. com esse filtro.</div>'}
+  ${rows.length>lim?`<div class="acts"><button class="btn" id="mais">Mostrar mais ${Math.min(300,rows.length-lim)}</button><span class="hint num">faltam ${rows.length-lim}</span></div>`:""}`;
+  const b=$("#busca"); b.addEventListener("input",()=>{S.busca[sh.k]=b.value;clearTimeout(vTabela._t);vTabela._t=setTimeout(()=>{const p=b.selectionStart;S.lim[sh.k]=150;draw();wireFocus("busca",p)},220)});
+  $("#fst").addEventListener("change",e=>{S.status[sh.k]=e.target.value;S.lim[sh.k]=150;draw()});
+  $("#tcols").addEventListener("change",e=>{S.todasCols=e.target.checked;draw()});
+  m.querySelectorAll("th.so").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.s,c=S.sort[sh.k];S.sort[sh.k]=c&&c.k===k?(c.d>0?{k,d:-1}:null):{k,d:1};draw()}));
+  const mais=$("#mais"); if(mais) mais.addEventListener("click",()=>{S.lim[sh.k]=lim+300;draw()});
+  ligaLinhas(m);
+  S.atual={tipo:"arr", nome:subst(sh.t), cab:[...COLS.map(c=>c[1]),"LINKS DAS FOTOS"], linhas:rows.map(o=>[...COLS.map(([k])=>val(o,k)),o.ft.join(" | ")])};
+}
+function vVinc(m){
+  const lista=S.os.filter(o=>o.ab.includes("vinc")).sort((a,b)=>String(a.pr).localeCompare(String(b.pr),"pt-BR",{numeric:true}));
+  const linhas=lista.map(o=>[o.fr||o.os,o.pr||"",o.un,o.ex,o.se]);
+  m.innerHTML=`<h1>Vinculadas</h1><p class="sub">EMERGÊNCIAS VINCULADAS — fictícia oficializada na O.S. oficial (regra do # N:1)</p>${fonteHTML()}${tabelaSimples(["FICTÍCIA","VINCULADA À OFICIAL","UNIDADE","EXECUTOR","SERVIÇO DA EMERGÊNCIA"],linhas,0)}`;
+  ligaLinhas(m); S.atual={tipo:"arr",nome:"VINCULADAS",cab:["FICTICIA","VINCULADA A OFICIAL","UNIDADE","EXECUTOR","SERVICO DA EMERGENCIA"],linhas};
+}
+function vReap(m){
+  const cab=["APRESENTADA EM","OS","UNIDADE","STATUS","MEDIÇÃO NO SISTEMA","MEMÓRIA","FOTOS","Nº OFICIAL","SITUAÇÃO"], linhas=S.d.reapresentar;
+  m.innerHTML=`<h1>Reapresentar MED 9-10</h1><p class="sub">APRESENTADAS NA MED 9/10 E NÃO APROVADAS — o que falta para reapresentar (decisão do engenheiro)</p>${fonteHTML()}${tabelaSimples(cab,linhas,1)}`;
+  m.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.lastElementChild,dv=td&&td.querySelector("div"); if(dv) dv.classList.add(/^PRONTA/.test(td.textContent)?"pronta":"falta");});
+  ligaLinhas(m); S.atual={tipo:"arr",nome:"REAPRESENTAR MED 9-10",cab,linhas};
+}
+function vEstilos(m){
+  const es=Object.entries(S.estilos);
+  m.innerHTML=`<h1>Estilos de cobrança aprendidos</h1><p class="sub">Quando o medidor lança uma O.S. marcando "manter este estilo", o mesmo tipo de serviço passa a vir com esses itens já sugeridos.</p>
+  <section class="panel"><div class="tw" style="max-height:none"><table><thead><tr><th>Tipo de serviço</th><th>Itens EMOP do estilo</th><th></th></tr></thead><tbody>
+  ${es.map(([k,e])=>`<tr><td><b>${esc(e.tipo)}</b></td><td class="num">${esc((e.cods||[]).join(" · "))}</td><td><button class="btn ghost" data-k="${esc(k)}">esquecer</button></td></tr>`).join("")||'<tr><td colspan="3" class="empty">Nenhum estilo aprendido ainda.</td></tr>'}</tbody></table></div></section>`;
+  m.querySelectorAll("[data-k]").forEach(bt=>bt.addEventListener("click",async()=>{const k=bt.dataset.k;if(S.db){try{await S.db.doc("estilos/"+k).delete()}catch(e){toast("Não deu para esquecer agora.");return}}delete S.estilos[k];toast("Estilo esquecido.");draw()}));
+}
+
+/* ================= botão do topo: baixar / gerar ================= */
+$("#acao").addEventListener("click", async ()=>{
+  if(!S.dl){toast("O download fica disponível ao abrir pelo Claude.");return}
+  const A=S.atual; if(!A) return;
+  try{
+    if(A.tipo==="relatorio"){
+      S.gerando=true; draw();
+      const r=await geraRelatorio(); S.gerando=false; draw();
+      if(r){ await S.dl.save({filename:r.nome,data:r.bytes}); toast("Relatório fotográfico salvo."); }
+      return;
+    }
+    if(typeof XLSX==="undefined"){toast("O gerador de planilha não carregou. Recarregue a página.");return}
+    let wb, nome;
+    if(A.tipo==="memoria"){ if(!A.its.length){toast("Nenhuma O.S. lançada ainda.");return} ({wb,nome}=exportaMemoria()); }
+    else if(A.tipo==="medicao"){
+      const cab=["OS","UNIDADE","CONCLUSAO","RESPONSAVEL","SERVICO EXECUTADO","MEMORIA DO CAMPO","FOTOS","O QUE FALTA","TIPO (SUGESTAO)","CODIGO (SUGESTAO)","CODIGO LANCADO","QTD / CONTA","VALOR","SITUACAO"];
+      const linhas=A.rows.map(o=>{const d=decDe(o),st=statusDe(o);return [o.os,o.un,o.co,o.ex,o.se,o.mc,o.ft.length,faltaDe(o).join(", "),o.ti,o.cs,st==="aprovada"?d.itens.map(i=>i.cod).join(" + "):"",st==="aprovada"?d.itens.map(i=>`${i.expressao} = ${i.qtd} ${i.unid}`).join(" | "):"",st==="aprovada"?Math.round(valorDec(d)*100)/100:"",st==="aprovada"?"LANÇADA":st==="pulada"?"PULADA":"A LANÇAR"]});
+      wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[`PAINEL DO MEDIDOR — ${M().med} (${M().ini} a ${M().fim})`],[`Gerado em ${new Date().toLocaleString("pt-BR")} · dados do banco de ${M().gerado_em}`],[],cab,...linhas]),M().med);
+      nome=`MEDICAO ${medTag()} - lista do medidor - ${hoje()}.xlsx`;
+    } else {
+      const aoa=[[`PLANILHA MESTRA FP.094 — ${A.nome}`],[`Dados do banco de ${M().gerado_em} (painel do medidor)`],[],...(A.antes?[...A.antes,[]]:[]),A.cab,...A.linhas];
+      wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),String(A.nome).replace(/[\\\/?*\[\]:]/g,"-").slice(0,31));
+      nome=`MESTRA ${medTag()} - ${String(A.nome).replace(/[\\\/?*\[\]:"<>|]/g,"-")} - ${hoje()}.xlsx`;
+    }
+    await S.dl.save({filename:nome,data:new Uint8Array(XLSX.write(wb,{bookType:"xlsx",type:"array"}))}); toast("Planilha salva.");
+  }catch(e){ S.gerando=false; draw(); toast(e&&e.code==="declined"?"Download cancelado.":"Não foi possível gerar agora."); }
+});
+
+/* ================= carga ================= */
+(async()=>{
+  try{
+    const [d,base,jur]=await Promise.all([fetch(ARQ).then(r=>r.json()),fetch("data/base.json").then(r=>r.json()),fetch("data/jurisprudencia.json").then(r=>r.json())]);
+    S.d=d; S.os=d.os||[]; S.base=base; base.forEach((b,i)=>{S.byCod[b.cod]=b;S.ordem[b.cod]=i}); jur.forEach(j=>S.jur[j.cod]=j);
+    S.os.forEach(o=>{S.byId[o.id]=o; if(!(o.os in S.byRef)) S.byRef[o.os]=o; if(o.fr&&!(o.fr in S.byRef)) S.byRef[o.fr]=o;
+      S.idx[o.id]=norm([o.os,o.fr,o.pr,o.un,o.fi,o.ex,o.st,o.me,o.so,o.se,o.ma,o.al,o.mc,o.va,o.ti,o.cs].join(" "))});
+    S.med=S.os.filter(daMed);
+    $("#brandsub").textContent=`FP Vieira Engenharia · Educação FP.094 · ${d.meta.med} (${d.meta.ini.slice(0,5)} a ${d.meta.fim.slice(0,5)})`;
+    $("#carimbo").textContent=`Banco: ${d.meta.gerado_em}`;
+    rota();
+  }catch(e){ $("#app").innerHTML='<div class="empty">Não consegui carregar o painel. Recarregue a página.</div>'; return; }
+  const C=window.claude; if(!C||typeof C.use!=="function"){S.gravavel=false;draw();return}
+  C.use("downloads").then(dl=>{if(dl){S.dl=dl;draw()}}).catch(()=>{});
+  C.use("user").then(async u=>{if(u){try{S.uid=await u.id()||""}catch(e){}}}).catch(()=>{});
+  try{
+    const db=await C.use("db"); if(!db){S.gravavel=false;draw();return}
+    S.db=db;
+    /* lançamento de outra pessoa chegou: atualiza sem tirar o cursor de quem está digitando */
+    const refresca=()=>{ if(!S.ficha){draw();return} const a=document.activeElement,id=a&&a.id;let p=null;try{p=a.selectionStart}catch(e){} renderFicha(id,p); };
+    db.collection("decisoes").onSnapshot(sn=>{S.dec={};sn.docs.forEach(x=>{S.dec[x.id]=x.data()});S.gravavel=true;refresca()},()=>{S.gravavel=false;draw()});
+    db.collection("estilos").onSnapshot(sn=>{S.estilos={};sn.docs.forEach(x=>{S.estilos[x.id]=x.data()});if(!S.ficha)draw()},()=>{});
+  }catch(e){ S.gravavel=false; draw(); }
+})();
+</script>
+</body>
+</html>

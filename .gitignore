@@ -1,0 +1,8 @@
+# miniaturas das fotos geradas pelo exporta_painel.py (pesadas; vão só para o artifact)
+front/data/fotos/
+front/data/fotos_vga/
+# retratos das O.S. puxados do banco (nomes de escolas, fiscais, equipes e links de fotos):
+# o repositório é PÚBLICO — geram-se de novo com os scripts e vão só para o painel publicado
+front/data/mestra_*.json
+front/data/os_*.json
+front/data/atual.json

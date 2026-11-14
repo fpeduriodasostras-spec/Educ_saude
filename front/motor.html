@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Motor de Medição FPV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,6 +71,12 @@ input.in{flex:1;min-width:180px}
 .tag.pend{background:var(--yellowsoft);color:var(--orange)}
 .tag.semnum{background:var(--redsoft);color:var(--red)}
 .tag.med{background:var(--bluesoft);color:var(--blue)}
+.tag.falta{background:var(--yellowsoft);color:var(--orange)}
+.tag.alerta{background:var(--redsoft);color:var(--red)}
+.oscard .ft{font-size:12px;color:var(--orange);margin-top:3px}
+.oscard .al{font-size:12px;color:var(--red);margin-top:2px;font-weight:600}
+.oscard .an{font-size:12px;color:var(--muted);margin-top:2px;font-style:italic}
+.fonte{font-size:12px;color:var(--muted);margin:-8px 0 14px}
 .det{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px;cursor:default}
 .det .campo{font-size:12.5px;color:var(--ink2);margin:2px 0}
 .det .campo b{color:var(--ink)}
@@ -96,9 +107,11 @@ input.in{flex:1;min-width:180px}
 .itemedit .un{font-size:12px;color:var(--muted)}
 .fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
 .foto{position:relative;border:2px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;padding:0;background:none}
-.foto img{width:84px;height:84px;object-fit:cover;display:block}
+.foto img{width:104px;height:104px;object-fit:cover;display:block}
 .foto.sel{border-color:var(--yellow)}
 .foto input{position:absolute;top:4px;left:4px;width:16px;height:16px}
+.foto a{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;padding:1px 6px;border-radius:4px;text-decoration:none}
+.foto .sem{width:104px;height:104px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;background:var(--surface2);padding:6px}
 .addwrap{margin:8px 0}
 .addlist{display:grid;gap:4px;margin-top:6px}
 .additem{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:var(--r);padding:8px 10px;cursor:pointer}
@@ -120,10 +133,11 @@ tr.tot td{border-top:2px solid var(--ink);font-weight:600;border-bottom:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media (max-width:760px){h1{font-size:25px}.fig b{font-size:23px}}
 </style>
-
+</head>
+<body>
 <header class="top">
   <div class="top-in">
-    <div class="brand">MOTOR DE MEDIÇÃO<small>FP Vieira Engenharia · Educação FP.094 · MED 10</small></div>
+    <div class="brand">MOTOR DE MEDIÇÃO<small id="brandsub">FP Vieira Engenharia · Educação FP.094</small></div>
     <nav class="tabs" id="tabs">
       <button data-v="conferencia" class="on">Conferência</button>
       <button data-v="aba">Aba da medição</button>
@@ -139,7 +153,20 @@ tr.tot td{border-top:2px solid var(--ink);font-weight:600;border-bottom:none}
 <script>
 "use strict";
 /* ================= estado ================= */
-const S = { os:[], base:[], jur:{}, byCod:{}, dec:{}, estilos:{}, view:"conferencia",
+/* a medição que o painel abre: o arquivo é gerado pelo scripts/exporta_painel.py
+   (banco central da VPS, só leitura) — para virar a medição, troque só este nome */
+const ARQ_OS = "data/os_med12.json";   /* padrão; se existir data/atual.json ({"arquivo": "..."}) ele manda */
+/* o mesmo painel serve aos dois contratos: o arquivo da medição diz qual base, qual histórico e as regras
+   (Saúde: sem nº oficial de O.S., histórico contado por unidade, material entra na sugestão) */
+const exigeNum = () => S.meta.exige_numero !== false;
+/* saldo do item (só a base da Saúde traz): contratado − medido nas medições lidas */
+function saldoHTML(b){
+  if(!b||b.saldo==null) return "";
+  const ruim=b.saldo<=0;
+  return `<div class="uso" style="${ruim?"color:var(--red);font-weight:600":""}">contratado ${f2(b.qc)} ${esc(b.unid)} · saldo até a ${esc(b.saldo_ate||"")}: ${f2(b.saldo)} ${esc(b.unid)}${ruim?" — ESGOTADO/ESTOURADO: conferir antes de medir":""}</div>`;
+}
+const codTxt = b => b.cod+(b.item?` · item ${b.item}`:"");
+const S = { os:[], meta:{}, base:[], jur:{}, byCod:{}, dec:{}, estilos:{}, thumbs:{}, view:"conferencia",
   filtro:"pendentes", busca:"", open:null, draft:null, db:null, dl:null, uid:"", carregado:false, gravavel:null };
 const $ = s => document.querySelector(s);
 const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -149,6 +176,11 @@ const brl = v => (!v||isNaN(v))?"–":"R$ "+nf2.format(v);
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2600)}
 const norm = t => String(t??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const osKey = o => ((o.grupo==="sem_numero"?"F-":"N-")+String(o.os)).replace(/[^A-Za-z0-9_-]/g,"-");
+/* decisão gravada por medição: "MED12-N-2950" (a MED 10 antiga usava só "N-699" e fica de fora) */
+const medTag = () => String(S.meta.med||"MED").replace(/\s+/g,"");
+const medNum = () => String(S.meta.med||"").replace(/\D+/g,"");
+const decId = o => medTag()+"-"+osKey(o);
+const decDe = o => { const d=S.dec[decId(o)]; return d&&d.med===S.meta.med?d:null; };
 
 /* ============ fita de cálculo (mesma regra do app de Medições) ============ */
 function evalExpr(str){
@@ -176,9 +208,9 @@ function exprDaMemoria(o){
 const STOP = new Set(["de","da","do","das","dos","e","em","no","na","nos","nas","com","para","por","a","o","as","os","um","uma","que","ate","apos"]);
 const toks = t => norm(t).split(/[^a-z0-9]+/).filter(w=>w.length>2&&!STOP.has(w));
 function propostas(o){
-  const codsSug = String(o.codsug||"").match(/\d{2}\.\d{3}(?:\.\d{4}-[AB])?/g) || [];
+  const codsSug = codsDaSugestao(o.codsug);
   const estilo = S.estilos[slug(o.tipo)] || null;
-  const tx = new Set(toks((o.servico||"")+" "+(o.solicitado||"")+" "+(o.tipo||"")));
+  const tx = new Set(toks((o.servico||"")+" "+(o.solicitado||"")+" "+(o.tipo||"")+(S.meta.usa_material?" "+(o.materiais||"")+" "+(o.memoria||"")+" "+(o.almox||""):"")));
   const scored = S.base.map(b=>{
     let sc=0;
     const dtoks=toks(b.desc);
@@ -190,6 +222,16 @@ function propostas(o){
     return {b, sc};
   }).filter(x=>x.sc>=2).sort((a,b)=>b.sc-a.sc).slice(0,4);
   return {cands:scored, estilo, codsSug};
+}
+/* "15.020.0173/0170/0158" -> 15.020.0173, 15.020.0170, 15.020.0158 ; "18.009/18.008" -> 18.009, 18.008
+   (antes virava só "15.020" e todas as lâmpadas ganhavam o bônus e vinham marcadas) */
+function codsDaSugestao(s){
+  const out=[]; let pre="";
+  for(const m of String(s||"").matchAll(/(\d{2}\.\d{3})(?:\.(\d{4}))?|\/(\d{4})\b/g)){
+    if(m[1]){ pre=m[1]; out.push(m[2]?pre+"."+m[2]:pre); }
+    else if(m[3]&&pre){ out.push(pre+"."+m[3]); }
+  }
+  return out;
 }
 const slug = t => norm(t).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"geral";
 
@@ -220,35 +262,41 @@ function draw(){
   vConf(m);
 }
 
-function statusDe(o){const d=S.dec[osKey(o)];return d?d.status:"pendente"}
+function statusDe(o){const d=decDe(o);return d?d.status:"pendente"}
+const faltaVisivel = o => (o.falta||[]).filter(f=>f!=="nº oficial");
 
 function vConf(m){
-  const total=S.os.length;
+  const M=S.meta, total=S.os.length;
   const aprov=S.os.filter(o=>statusDe(o)==="aprovada").length;
-  const pend=total-aprov-S.os.filter(o=>statusDe(o)==="pulada").length;
+  const prontas=S.os.filter(o=>o.pronta).length;
+  const faltando=total-prontas;
   const semnum=S.os.filter(o=>o.grupo==="sem_numero").length;
   const q=norm(S.busca);
   const lista=S.os.filter(o=>{
     const st=statusDe(o);
     if(S.filtro==="pendentes"&&st!=="pendente")return false;
     if(S.filtro==="aprovadas"&&st!=="aprovada")return false;
+    if(S.filtro==="prontas"&&!o.pronta)return false;
+    if(S.filtro==="faltando"&&o.pronta)return false;
     if(S.filtro==="sem_numero"&&o.grupo!=="sem_numero")return false;
-    if(q&&!norm(o.os+" "+o.unidade+" "+o.servico+" "+o.solicitado+" "+o.tipo).includes(q))return false;
+    if(q&&!norm(o.os+" "+o.unidade+" "+o.servico+" "+o.solicitado+" "+o.tipo+" "+(o.resp||"")).includes(q))return false;
     return true;
   });
   m.innerHTML=`
-  <h1>Conferência da MED 10</h1>
-  <p class="sub">O motor propõe o item EMOP e a conta a partir do histórico aceito das 9 medições; você confere, ajusta e aprova. Período 02/09 a 01/10/2026.</p>
+  <h1>Conferência da ${esc(M.med)}</h1>
+  <p class="sub">O motor propõe o item EMOP e a conta a partir do histórico aceito das medições anteriores; você confere, ajusta e aprova. Período ${esc(M.ini)} a ${esc(M.fim)}.</p>
+  <p class="fonte">Dados do banco central puxados em <b>${esc(M.gerado_em)}</b>. O que for lançado ou concluído depois disso só aparece quando o painel for atualizado. Entram: ${esc(M.regra)}.</p>
   ${S.gravavel===false?'<div class="notice">Modo leitura: as aprovações não estão sendo gravadas neste acesso. Abra pelo Claude com a conta da equipe para gravar.</div>':""}
   <div class="figs">
     <div class="fig"><b class="num">${total}</b><span>O.S. na medição</span></div>
-    <div class="fig"><b class="num">${aprov}</b><span>aprovadas ✓</span></div>
-    <div class="fig"><b class="num">${pend}</b><span>aguardando conferência</span></div>
-    <div class="fig"><b class="num">${semnum}</b><span>sem nº oficial</span></div>
+    <div class="fig"><b class="num">${prontas}</b><span>prontas p/ apresentar</span></div>
+    <div class="fig"><b class="num">${faltando}</b><span>faltando algo (risco de glosa)</span></div>
+    ${exigeNum()?`<div class="fig"><b class="num">${semnum}</b><span>sem nº oficial</span></div>`:""}
+    <div class="fig"><b class="num">${aprov}</b><span>aprovadas no painel ✓</span></div>
   </div>
   <div class="bar">
-    <input class="in" id="busca" placeholder="Buscar escola, serviço ou nº da O.S." value="${esc(S.busca)}">
-    ${[["pendentes","Pendentes"],["aprovadas","Aprovadas"],["sem_numero","Sem nº oficial"],["todas","Todas"]].map(([v,r])=>`<button class="chip ${S.filtro===v?"on":""}" data-f="${v}">${r}</button>`).join("")}
+    <input class="in" id="busca" placeholder="Buscar escola, serviço, equipe ou nº da O.S." value="${esc(S.busca)}">
+    ${[["pendentes","A conferir"],["prontas","Prontas"],["faltando","Faltando algo"],...(exigeNum()?[["sem_numero","Sem nº oficial"]]:[]),["aprovadas","Aprovadas"],["todas","Todas"]].map(([v,r])=>`<button class="chip ${S.filtro===v?"on":""}" data-f="${v}">${r}</button>`).join("")}
   </div>
   <div class="oslist">${lista.map(cardOS).join("")||'<div class="empty">Nenhuma O.S. neste filtro.</div>'}</div>`;
   $("#busca").addEventListener("input",e=>{S.busca=e.target.value;clearTimeout(vConf._t);vConf._t=setTimeout(()=>{const p=e.target.selectionStart;draw();const el=$("#busca");if(el){el.focus();el.setSelectionRange(p,p)}},250)});
@@ -263,16 +311,20 @@ function vConf(m){
 function cardOS(o){
   const k=osKey(o), st=statusDe(o), aberto=S.open===k;
   const tagSt = st==="aprovada"?'<span class="tag ok">✓ aprovada</span>':st==="pulada"?'<span class="tag med">pulada</span>':'<span class="tag pend">conferir</span>';
+  const nf=(o.fotos_url||[]).length, fl=faltaVisivel(o);
   return `<div class="oscard" data-k="${k}">
     <div class="hd"><span class="ref num">${esc(o.os)}</span><span class="esc">${esc(o.unidade)}</span>
-      ${tagSt}${o.grupo==="sem_numero"?'<span class="tag semnum">sem nº oficial</span>':""}${o.tipo?`<span class="tag med">${esc(o.tipo)}</span>`:""}</div>
+      ${tagSt}${o.pronta?'<span class="tag ok">pronta p/ apresentar</span>':""}${o.grupo==="sem_numero"&&exigeNum()?'<span class="tag semnum">sem nº oficial</span>':""}${o.tipo?`<span class="tag med">${esc(o.tipo)}</span>`:""}<span class="tag ${nf>=3?"med":"falta"}">${nf} foto${nf===1?"":"s"}</span></div>
     <div class="sv">${esc(o.servico||o.solicitado||"—")}</div>
+    ${fl.length?`<div class="ft">Falta: ${esc(fl.join(" · "))}</div>`:""}
+    ${(o.alertas||[]).map(a=>`<div class="al">⚠ ${esc(a)}</div>`).join("")}
+    ${o.analise?`<div class="an">${esc(o.analise)}</div>`:""}
     ${aberto?detalhe(o):""}
   </div>`;
 }
 
 function detalhe(o){
-  const k=osKey(o), dec=S.dec[k];
+  const k=osKey(o), dec=decDe(o);
   if(!S.draft||S.draft.k!==k){
     const p=propostas(o);
     const pre=exprDaMemoria(o);
@@ -283,19 +335,20 @@ function detalhe(o){
   const emDraft=cod=>D.itens.some(i=>i.cod===cod);
   return `<div class="det">
     ${o.solicitado?`<div class="campo"><b>Pedido do fiscal:</b> ${esc(o.solicitado)}</div>`:""}
-    ${o.materiais?`<div class="campo"><b>Material usado:</b> ${esc(o.materiais)}</div>`:""}
-    ${o.memoria?`<div class="campo"><b>Memória do campo:</b> ${esc(o.memoria)}</div>`:""}
-    <div class="campo"><b>Equipe:</b> ${esc(o.resp||"—")} · <b>Fiscal:</b> ${esc(o.fiscal||"—")} · <b>Conclusão:</b> ${esc(o.conclusao||"—")}</div>
-    <div class="campo"><b>Fotos para o RDO:</b> ${(o.fotos&&o.fotos.length)?`toque para escolher as melhores (${D.fotos.size} escolhida${D.fotos.size===1?"":"s"})`:"as miniaturas aparecem aqui quando o banco de fotos for conectado"}</div>
-    ${(o.fotos&&o.fotos.length)?`<div class="fotos">${o.fotos.map((f,fi)=>`<label class="foto ${D.fotos.has(fi)?"sel":""}"><input type="checkbox" data-fi="${fi}" ${D.fotos.has(fi)?"checked":""} aria-label="incluir foto ${fi+1} no RDO"><img src="${esc(f.u)}" alt="Foto ${fi+1} da O.S." loading="lazy"></label>`).join("")}</div>`:""}
+    ${o.materiais?`<div class="campo"><b>Material usado (campo):</b> ${esc(o.materiais)}</div>`:""}
+    ${o.almox?`<div class="campo"><b>Saída do almoxarifado:</b> ${esc(o.almox)}</div>`:""}
+    <div class="campo"><b>Memória do campo:</b> ${o.memoria?esc(o.memoria):'<span style="color:var(--red)">nada lançado no app</span>'}</div>
+    <div class="campo"><b>Equipe:</b> ${esc(o.resp||"—")} · <b>Fiscal:</b> ${esc(o.fiscal||"—")} · <b>Entrada:</b> ${esc(o.entrada||"—")} · <b>Conclusão:</b> ${esc(o.conclusao||"—")} · <b>Status:</b> ${esc(o.status||"—")}${o.etiqueta?` · <b>Etiqueta no app:</b> ${esc(o.etiqueta)}`:""}</div>
+    ${fotosHTML(o,D)}
     ${D.estilo?`<div class="campo" style="color:var(--green)"><b>Estilo aprendido:</b> este tipo (${esc(o.tipo)}) costuma ser cobrado em ${D.estilo.cods.join(", ")}</div>`:""}
     <h3 style="font-family:var(--display);font-size:17px;margin:12px 0 4px">O motor sugere (marque o que se aplica — pode ser mais de um):</h3>
     <div class="cands">${D.cands.map(c=>{
       const j=S.jur[c.b.cod];
       return `<label class="cand ${emDraft(c.b.cod)?"sel":""}"><input type="checkbox" data-cod="${c.b.cod}" ${emDraft(c.b.cod)?"checked":""}>
-        <div><div class="cd num">${c.b.cod} · ${esc(c.b.unid)} · ${brl(c.b.preco)}</div>
+        <div><div class="cd num">${esc(codTxt(c.b))} · ${esc(c.b.unid)} · ${brl(c.b.preco)}</div>
         <div class="ds">${esc(c.b.desc.slice(0,150))}${c.b.desc.length>150?"…":""}</div>
-        ${j?`<div class="uso">histórico: ${j.n} contas aceitas em ${j.nos} O.S. · ex.: ${esc(String(j.ex1||"").slice(0,90))}</div>`:'<div class="uso">sem histórico — item novo para o motor</div>'}
+        ${j?`<div class="uso">histórico: ${j.n} contas aceitas em ${j.nos} ${esc(S.meta.jur_rotulo||"O.S.")} · ex.: ${esc(String(j.ex1||"").slice(0,90))}</div>`:'<div class="uso">sem histórico — item novo para o motor</div>'}
+        ${saldoHTML(c.b)}
         </div></label>`}).join("")||'<div class="hint">O motor não achou candidato com confiança. Use a busca manual abaixo.</div>'}
     </div>
     <div class="addwrap">
@@ -305,7 +358,8 @@ function detalhe(o){
     ${D.itens.map((it,ix)=>{
       const b=S.byCod[it.cod]||{}; const q=evalExpr(it.expressao);
       return `<div class="itemedit">
-        <div class="tt"><span class="cd num">${it.cod}</span><span class="un">${esc(b.unid||"?")} · ${brl(b.preco)}</span></div>
+        <div class="tt"><span class="cd num">${esc(b.cod?codTxt(b):it.cod)}</span><span class="un">${esc(b.unid||"?")} · ${brl(b.preco)}</span></div>
+        ${saldoHTML(b)}
         <div class="ds" title="${esc(b.desc||"")}">${esc((b.desc||"item fora da base do contrato").slice(0,160))}${(b.desc||"").length>160?"…":""}</div>
         <div class="tape"><input id="ex-${ix}" data-ix="${ix}" placeholder="a conta: 4,20 x 2,80 - 0,80 x 2,10 (ou só a quantidade)" value="${esc(it.expressao)}">
         <span class="res num ${isNaN(q)&&it.expressao?"bad":""}">${it.expressao?(isNaN(q)?"conta incompleta":f2(q)+" "+(b.unid||"")):"–"}</span></div>
@@ -320,8 +374,26 @@ function detalhe(o){
   </div>`;
 }
 
+/* fotos: o painel não abre imagem de fora, então cada O.S. tem um arquivo
+   data/fotos/<id>.json com miniaturas embutidas; "abrir" leva à foto grande no banco */
+function fotosHTML(o,D){
+  const urls=o.fotos_url||[], th=S.thumbs[o.id];
+  if(!urls.length) return '<div class="campo" style="color:var(--red)"><b>Fotos:</b> nenhuma foto no app — sem foto a fiscalização glosa (mínimo 3).</div>';
+  return `<div class="campo"><b>Fotos (${urls.length}):</b> marque as melhores para o RDO (${D.fotos.size} escolhida${D.fotos.size===1?"":"s"}) · "abrir" mostra a foto grande${urls.length<3?' · <span style="color:var(--red)">menos de 3 fotos: risco de glosa</span>':""}</div>
+    <div class="fotos">${urls.map((u,fi)=>{const t=Array.isArray(th)?th[fi]:null;
+      return `<label class="foto ${D.fotos.has(fi)?"sel":""}"><input type="checkbox" data-fi="${fi}" ${D.fotos.has(fi)?"checked":""} aria-label="incluir foto ${fi+1} no RDO">${t?`<img src="${esc(t)}" alt="Foto ${fi+1} da O.S. ${esc(o.os)}" loading="lazy">`:`<span class="sem">${Array.isArray(th)?"miniatura não abriu":"carregando…"}</span>`}<a href="${esc(u)}" target="_blank" rel="noopener">abrir</a></label>`}).join("")}</div>`;
+}
+function pedeThumbs(o){
+  if(!(o.fotos_url||[]).length||S.thumbs[o.id]!==undefined)return;
+  S.thumbs[o.id]="carregando";
+  fetch(`data/fotos/${o.id}.json`).then(r=>{if(!r.ok)throw 0;return r.json()})
+    .then(j=>{S.thumbs[o.id]=Array.isArray(j)?j:[]}).catch(()=>{S.thumbs[o.id]=[]})
+    .finally(()=>{ if(S.open===osKey(o)){const a=document.activeElement,id=a&&a.id;let p=null;try{p=a.selectionStart}catch(e){} draw(); if(id)wireFocus(id,p);} });
+}
+
 function wireDetalhe(){
   const o=S.os.find(x=>osKey(x)===S.open); if(!o)return;
+  pedeThumbs(o);
   const D=S.draft;
   document.querySelectorAll(".cand input").forEach(cb=>cb.addEventListener("change",()=>{
     const cod=cb.dataset.cod;
@@ -352,21 +424,23 @@ function wireDetalhe(){
   const ap=$("#aprovar"); if(ap) ap.addEventListener("click",()=>decidir(o,"aprovada"));
   const pu=$("#pular"); if(pu) pu.addEventListener("click",()=>decidir(o,"pulada"));
   const df=$("#desfazer"); if(df) df.addEventListener("click",async()=>{
-    if(S.db){ try{ await S.db.doc("decisoes/"+osKey(o)).delete(); }catch(e){toast("Não deu para desfazer agora.");return} }
-    delete S.dec[osKey(o)]; S.draft=null; toast("Decisão desfeita."); draw();
+    if(S.db){ try{ await S.db.doc("decisoes/"+decId(o)).delete(); }catch(e){toast("Não deu para desfazer agora.");return} }
+    delete S.dec[decId(o)]; S.draft=null; toast("Decisão desfeita."); draw();
   });
 }
 function wireFocus(id,p){ if(!id)return; const el=document.getElementById(id); if(el){el.focus(); if(p!=null)el.setSelectionRange(p,p)} }
 
 async function decidir(o,status){
-  const D=S.draft, k=osKey(o);
+  const D=S.draft, k=decId(o);
   let itens=[];
   if(status==="aprovada"){
     itens=D.itens.filter(i=>i.cod&&!isNaN(evalExpr(i.expressao)));
     if(!itens.length){toast("Preencha a conta de pelo menos um item antes de aprovar.");return}
     itens=itens.map(i=>{const b=S.byCod[i.cod]||{};return {cod:i.cod, unid:b.unid||"", preco:b.preco||0, expressao:i.expressao.trim(), qtd:Math.round(evalExpr(i.expressao)*1e4)/1e4}});
   }
-  const doc={os:String(o.os), unidade:o.unidade, grupo:o.grupo, tipo:o.tipo||"", status, itens, fotos_rdo:[...(D.fotos||[])], por:S.uid, em:new Date().toISOString()};
+  const fr=[...(D.fotos||[])].sort((a,b)=>a-b);
+  const doc={med:S.meta.med, os:String(o.os), unidade:o.unidade, grupo:o.grupo, tipo:o.tipo||"", status, itens,
+    fotos_rdo:fr, fotos_rdo_url:fr.map(fi=>(o.fotos_url||[])[fi]).filter(Boolean), por:S.uid, em:new Date().toISOString()};
   const manter=($("#manter")||{}).checked;
   S.dec[k]=doc; S.open=null; S.draft=null;
   if(S.db){
@@ -383,7 +457,7 @@ async function decidir(o,status){
 
 /* ================= aba da medição ================= */
 function vAba(m){
-  const decs=Object.values(S.dec).filter(d=>d.status==="aprovada");
+  const decs=Object.values(S.dec).filter(d=>d.status==="aprovada"&&d.med===S.meta.med);
   const porItem=new Map();
   let memoria=[];
   for(const d of decs) for(const it of d.itens){
@@ -395,7 +469,7 @@ function vAba(m){
   const total=rows.reduce((a,b)=>a+b.qtd*b.preco,0);
   memoria.sort((a,b)=>a.cod.localeCompare(b.cod)||String(a.escola).localeCompare(b.escola));
   m.innerHTML=`
-  <h1>Aba da medição — MED 10</h1>
+  <h1>Aba da medição — ${esc(S.meta.med)}</h1>
   <p class="sub">Montada só com o que foi aprovado na conferência. O Edmar valida aqui antes de ir para a planilha oficial.</p>
   <div class="figs">
     <div class="fig"><b class="num">${decs.length}</b><span>O.S. aprovadas</span></div>
@@ -411,21 +485,25 @@ function vAba(m){
   </tbody></table></div></section>
   <div class="acts"><button class="btn pri" id="baixar" ${rows.length&&S.dl?"":"disabled"}>Baixar planilha Excel</button>
   <span class="hint">${S.dl?"":"O download fica disponível ao abrir pelo Claude."}</span></div>`;
-  const bx=$("#baixar"); if(bx) bx.addEventListener("click",()=>exportar(rows,memoria,total));
+  const bx=$("#baixar"); if(bx) bx.addEventListener("click",()=>exportar(rows,memoria,total,decs));
 }
 
-async function exportar(rows,memoria,total){
+async function exportar(rows,memoria,total,decs){
   if(typeof XLSX==="undefined"){toast("Gerador de planilha não carregou. Recarregue a página.");return}
+  const med=S.meta.med||"MED", n=medNum();
   const wb=XLSX.utils.book_new();
-  const a=[["F. P. VIEIRA ENGENHARIA — CONTRATO 064/2025 · SEMEDE RIO DAS OSTRAS"],["MEDIÇÃO 10 — PROPOSTA DO MOTOR (conferida no painel; aprovação final do Edmar)"],[],["CÓDIGO EMOP","DESCRIÇÃO","UNID.","QTD NO PERÍODO","PREÇO C/ BDI","VALOR"]];
+  const a=[[`F. P. VIEIRA ENGENHARIA — ${String(S.meta.contrato||"Educação FP.094 · contrato 064/2025").toUpperCase()} · ${S.meta.contratante||"SEMEDE RIO DAS OSTRAS"}`],[`MEDIÇÃO ${n} (${S.meta.ini||""} a ${S.meta.fim||""}) — PROPOSTA DO MOTOR (conferida no painel; aprovação final do Edmar)`],[],["CÓDIGO EMOP","DESCRIÇÃO","UNID.","QTD NO PERÍODO","PREÇO C/ BDI","VALOR"]];
   rows.forEach(r=>a.push([r.cod,r.desc,r.unid,Math.round(r.qtd*100)/100,r.preco,Math.round(r.qtd*r.preco*100)/100]));
   a.push([],["","","","","TOTAL",Math.round(total*100)/100]);
-  const w1=XLSX.utils.aoa_to_sheet(a);w1["!cols"]=[{wch:16},{wch:60},{wch:6},{wch:14},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,w1,"MED 10 PROPOSTA");
-  const b=[["MEMÓRIA DE CÁLCULO — MED 10"],[],["CÓDIGO EMOP","ESCOLA","O.S","CONTA","QTD","UNID."]];
+  const w1=XLSX.utils.aoa_to_sheet(a);w1["!cols"]=[{wch:16},{wch:60},{wch:6},{wch:14},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,w1,`${med} PROPOSTA`);
+  const b=[[`MEMÓRIA DE CÁLCULO — ${med}`],[],["CÓDIGO EMOP","ESCOLA","O.S","CONTA","QTD","UNID."]];
   memoria.forEach(l=>b.push([l.cod,l.escola,l.os,l.expressao,l.qtd,l.unid]));
   const w2=XLSX.utils.aoa_to_sheet(b);w2["!cols"]=[{wch:16},{wch:38},{wch:8},{wch:34},{wch:10},{wch:6}];XLSX.utils.book_append_sheet(wb,w2,"MEMORIA DE CALCULO");
+  const c=[[`FOTOS ESCOLHIDAS PARA O RDO — ${med}`],[],["O.S","ESCOLA","FOTO (link)"]];
+  (decs||[]).forEach(d=>(d.fotos_rdo_url||[]).forEach(u=>c.push([d.os,d.unidade,u])));
+  const w3=XLSX.utils.aoa_to_sheet(c);w3["!cols"]=[{wch:8},{wch:38},{wch:90}];XLSX.utils.book_append_sheet(wb,w3,"FOTOS RDO");
   const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
-  try{await S.dl.save({filename:"MED10_proposta_motor.xlsx",data:new Uint8Array(buf)});toast("Planilha salva.")}
+  try{await S.dl.save({filename:`MED${n}_proposta_motor.xlsx`,data:new Uint8Array(buf)});toast("Planilha salva.")}
   catch(e){toast(e&&e.code==="declined"?"Download cancelado.":"Não foi possível baixar agora.")}
 }
 
@@ -449,12 +527,17 @@ function vEstilos(m){
 /* ================= carga ================= */
 async function carregar(){
   try{
-    const [os,base,jur]=await Promise.all([
-      fetch("data/os_med10.json").then(r=>r.json()),
-      fetch("data/base.json").then(r=>r.json()),
-      fetch("data/jurisprudencia.json").then(r=>r.json()),
+    let arq=ARQ_OS;
+    try{ const at=await fetch("data/atual.json"); if(at.ok){ const j=await at.json(); if(j&&j.arquivo) arq=j.arquivo; } }catch(e){}
+    const med=await fetch(arq).then(r=>r.json());
+    S.meta=med.meta||{}; S.os=med.os||[];
+    const [base,jur]=await Promise.all([
+      fetch(S.meta.base||"data/base.json").then(r=>r.json()),
+      fetch(S.meta.jur||"data/jurisprudencia.json").then(r=>r.json()),
     ]);
-    S.os=os; S.base=base; base.forEach(b=>S.byCod[b.cod]=b); jur.forEach(j=>S.jur[j.cod]=j);
+    document.title=`Motor de Medição FPV · ${String(S.meta.contrato||"").split(" · ")[0]}`;
+    S.base=base; base.forEach(b=>S.byCod[b.cod]=b); jur.forEach(j=>S.jur[j.cod]=j);
+    const bs=$("#brandsub"); if(bs) bs.textContent=`FP Vieira Engenharia · ${String(S.meta.contrato||"Educação FP.094").split(" · ")[0]} · ${S.meta.med||""}`;
     S.carregado=true; draw();
   }catch(e){ $("#app").innerHTML='<div class="empty">Não consegui carregar os dados da medição. Recarregue a página.</div>'; }
 }
@@ -470,3 +553,5 @@ carregar();
   db.collection("estilos").onSnapshot(sn=>{S.estilos={};sn.docs.forEach(d=>{S.estilos[d.id]=d.data()});if(S.carregado)draw()},()=>{});
 })();
 </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planilha Mestra FPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEEEA; --surface:#FFFFFF; --surface2:#F6F7F4; --ink:#1D2630; --ink2:#4A5560; --muted:#6B757E;
+  --line:#D3D8D2; --line2:#E4E7E2; --blue:#1F4E79; --blue2:#2D6AA3; --bluesoft:#E3ECF5;
+  --yellow:#F2B705; --yellowsoft:#FFF4CC; --red:#B3261E; --redsoft:#FBE3E1;
+  --green:#2E7D4F; --greensoft:#E1F1E7; --orange:#9A5205; --topbar:#1D2630;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif; --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8F99A2;
+    --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1E3247;
+    --yellow:#F2B705; --yellowsoft:#3A3212; --red:#F08A82; --redsoft:#3D1F1D;
+    --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8F99A2;
+  --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1E3247;
+  --yellow:#F2B705; --yellowsoft:#3A3212; --red:#F08A82; --redsoft:#3D1F1D;
+  --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--body)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--topbar);color:#fff}
+.top-in{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:21px;line-height:1}
+.brand small{display:block;font-family:var(--body);font-weight:400;font-size:11.5px;color:#AEB8C1;margin-top:2px}
+.topr{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.carimbo{font-size:12px;color:#C9D1D8}
+.stripe{height:5px;background:repeating-linear-gradient(-45deg,var(--yellow) 0 10px,#1D2630 10px 20px)}
+.sheets{display:flex;gap:3px;overflow-x:auto;padding:7px 16px 0;background:var(--surface2);border-bottom:1px solid var(--line);scrollbar-width:thin}
+.sheets a{flex:none;padding:7px 12px 6px;border:1px solid var(--line);border-bottom:none;border-radius:6px 6px 0 0;background:var(--bg);color:var(--ink2);font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap}
+.sheets a:hover{color:var(--ink)}
+.sheets a.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:inset 0 3px 0 var(--blue)}
+.sheets a .n{font-size:11px;color:var(--muted);margin-left:6px;font-variant-numeric:tabular-nums}
+main{max-width:1400px;margin:0 auto;padding:16px 16px 80px}
+h1{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.1;margin:4px 0 4px}
+h2{font-family:var(--display);font-weight:700;font-size:20px;margin:0 0 8px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 6px}
+.fonte{font-size:12px;color:var(--muted);margin:0 0 14px}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.fig{background:var(--surface);padding:10px 14px;border:none;text-align:left;cursor:pointer;color:var(--ink)}
+.fig:hover{background:var(--bluesoft)}
+.fig b{display:block;font-family:var(--display);font-weight:700;font-size:28px;line-height:1.05}
+.fig span{color:var(--ink2);font-size:12px}
+.fig.ok b{color:var(--green)} .fig.at b{color:var(--orange)} .fig.ru b{color:var(--red)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.in{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 10px;font-size:14px;color:var(--ink)}
+input.in{flex:1;min-width:200px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 11px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--ink2)}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+:root[data-theme="dark"] .chip.on{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.on{color:#12171C}}
+.hint{font-size:12px;color:var(--muted);margin:0 0 6px}
+.notice{background:var(--yellowsoft);border:1px solid var(--yellow);border-radius:var(--r);padding:10px 12px;font-size:13px;margin-bottom:12px}
+.tw{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+th{position:sticky;top:0;z-index:2;background:var(--surface2);text-align:left;font-weight:600;color:var(--ink2);font-size:11.5px;letter-spacing:.02em;border-bottom:2px solid var(--ink);padding:7px 8px;white-space:nowrap}
+th.so{cursor:pointer;user-select:none} th.so:hover{color:var(--ink)}
+td{padding:6px 8px;border-bottom:1px solid var(--line2);vertical-align:top;background:var(--surface)}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.grid td:first-child,.grid th:first-child{position:sticky;left:0;z-index:1;border-right:1px solid var(--line2)}
+.grid th:first-child{z-index:3}
+.grid tbody tr{cursor:pointer}
+.grid tbody tr:hover td{background:var(--bluesoft)}
+.lt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-width:200px;max-width:340px}
+.md{min-width:150px;max-width:240px}
+.lnk{border:none;background:none;padding:0;font:700 14px var(--display);color:var(--blue);cursor:pointer;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.t-ok{background:var(--greensoft);color:var(--green)} .t-ex{background:var(--bluesoft);color:var(--blue)}
+.t-pe{background:var(--yellowsoft);color:var(--orange)} .t-ru{background:var(--redsoft);color:var(--red)}
+.t-cz{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.falta{color:var(--orange);font-weight:600}
+.pronta{color:var(--green);font-weight:600}
+.vazio{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:var(--r);cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.btn:hover{border-color:var(--ink2)}
+.btn.pri{background:var(--yellow);border-color:var(--yellow);color:#1D2630}
+.btn:disabled{opacity:.5;cursor:default}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:10px}
+.fcard .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.fcard .ref{font:700 19px var(--display)}
+.fotos{display:flex;gap:6px;flex-wrap:wrap}
+.foto{position:relative;display:block;width:104px;height:104px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface2);text-decoration:none;color:var(--muted);font-size:11px}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto span{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;padding:1px 6px;border-radius:4px}
+.foto.sem{display:flex;align-items:center;justify-content:center;text-align:center;padding:6px}
+.ov{position:fixed;inset:0;background:rgba(10,14,18,.5);z-index:60;display:flex;justify-content:flex-end}
+.ov[hidden]{display:none}
+.dw{background:var(--surface);width:min(600px,100%);height:100%;overflow-y:auto;padding:16px 18px 40px;box-shadow:-8px 0 24px rgba(0,0,0,.2)}
+.dw .hd{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.dw .hd h2{margin:0;flex:1}
+.dw dl{display:grid;grid-template-columns:170px 1fr;gap:5px 12px;font-size:13px;margin:10px 0}
+.dw dt{color:var(--ink2);font-weight:600;font-size:11.5px;letter-spacing:.02em;padding-top:2px}
+.dw dd{margin:0;white-space:pre-wrap;word-break:break-word}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);font-size:13.5px;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (max-width:640px){h1{font-size:24px}.fig b{font-size:23px}.dw dl{grid-template-columns:1fr;gap:0 0}.dw dt{margin-top:8px}.tw{max-height:none}.carimbo{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">PLANILHA MESTRA<small id="brandsub">FP Vieira Engenharia · Educação FP.094</small></div>
+    <div class="topr"><span class="carimbo" id="carimbo"></span><button class="btn pri" id="baixar" disabled>Baixar esta aba (Excel)</button></div>
+  </div>
+  <div class="stripe"></div>
+  <nav class="sheets" id="sheets" aria-label="Abas da planilha"></nav>
+</header>
+<main id="app"><div class="empty">Carregando a planilha…</div></main>
+<div class="ov" id="ov" hidden><div class="dw" id="dw" role="dialog" aria-modal="true" aria-labelledby="dwt"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+"use strict";
+/* Dados: data/mestra_medNN.json, gerado por scripts/exporta_mestra.py — roda o próprio gerar_mestra.py
+   da VPS (mesmas regras do Excel do mês), só leitura. Para virar a medição, troque só este nome. */
+const ARQ = "data/mestra_med12.json";
+const S = { d:null, os:[], byId:{}, byRef:{}, idx:{}, view:"conferencia", busca:{}, status:{}, sort:{}, lim:{},
+  todasCols:false, prob:"", thumbs:{}, dl:null, atual:null, voltaFoco:null };
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = t => String(t??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2600)}
+
+/* ---- colunas: as 21 da Mestra, na mesma ordem (o 3º campo = aparece na vista resumida) ---- */
+const COLS = [
+  ["os","OS",1],["un","UNIDADE",1],["fi","FISCAL",0],["cl","CLASSIF",0],["en","ENTRADA",0],["co","CONCLUSÃO",1],
+  ["ex","RESPONSÁVEL",1],["st","STATUS",1],["me","MEDIÇÃO",1],["so","O QUE O FISCAL SOLICITOU",0],["se","SERVIÇO EXECUTADO",1],
+  ["ma","MATERIAL (MANUAL)",0],["al","MATERIAL ALMOXARIFADO (AUTO)",0],["qi","QTDE ITENS",0],["_tipo","TIPO (GUIA EMOP)",0],
+  ["_cod","CÓDIGO EMOP (SUGESTÃO)",0],["_lanc","CÓDIGO EMOP (LANÇAMENTO)",0],["mc","MEMÓRIA DE CÁLCULO",1],["_fotos","FOTOS",1],
+  ["as","ASSINADA",0],["va","VALIDAÇÃO ESCOLA",0]
+];
+const LONGAS = new Set(["so","se","ma","al","mc","va","fa","si"]);
+const MEDIAS = new Set(["un"]);
+const val = (o,k) => k==="_fotos" ? (o.ft.length?o.ft.length+" foto"+(o.ft.length===1?"":"s"):"") : k[0]==="_" ? "" : (o[k]??"");
+
+/* ---- abas, na ordem do Excel ---- */
+const SHEETS = [
+  {k:"conferencia", t:"Conferência"},
+  {k:"todas", t:"O.S 2026", f:()=>true, tit:"PLANILHA MESTRA FP.094 — TODAS AS O.S. (espelho do sistema)"},
+  {k:"andamento", t:"{MED} em andamento", f:o=>o.ab.includes("and"), tit:"{MED} ({INI} a {FIM}) — marcadas {MED} + concluídas/assinatura/avaliando no período"},
+  {k:"prontas", t:"{MED} pronta p/ apresentar", f:o=>o.ab.includes("pronta"), tit:"{MED} ({INI} a {FIM}) — PRONTAS: concluídas, com nº oficial, memória de cálculo, 3+ fotos e executor"},
+  {k:"completar", t:"{MED} completar antes", f:o=>o.ab.includes("completar"), extra:["fa","O QUE FALTA"], tit:"{MED} ({INI} a {FIM}) — COMPLETAR ANTES DE APRESENTAR (sem isso a fiscalização glosa — ver MED 9/10)"},
+  {k:"sem-numero", t:"{MED} sem nº", f:o=>o.ab.includes("sem"), extra:["si","SITUAÇÃO"], tit:"{MED} ({INI} a {FIM}) — FEITO SEM Nº OFICIAL (fictícia). Na MED 10 o Edmar aprovou fictícias; cobrar o nº com o fiscal"},
+  {k:"fotos", t:"Fotos {MED}", tit:"{MED} — TODAS AS FOTOS DE CADA O.S. (em andamento + sem nº)"},
+  {k:"aguardando", t:"Aguardando nº", f:o=>o.ab.includes("aguard"), tit:"FICTÍCIAS (L-M-G-C-F-Q…) aguardando número oficial do fiscal"},
+  {k:"vinculadas", t:"Vinculadas", tit:"EMERGÊNCIAS VINCULADAS — fictícia oficializada na O.S. oficial (regra do # N:1)"},
+  {k:"reapresentar", t:"Reapresentar MED 9-10", tit:"APRESENTADAS NA MED 9/10 E NÃO APROVADAS — o que falta para reapresentar (decisão do engenheiro)"},
+];
+const M = () => S.d.meta;
+const subst = t => String(t||"").replace(/\{MED\}/g,M().med).replace(/\{INI\}/g,M().ini.slice(0,5)).replace(/\{FIM\}/g,M().fim.slice(0,5));
+const sheet = k => SHEETS.find(s=>s.k===k)||SHEETS[0];
+const daMed = o => o.ab.includes("and")||o.ab.includes("sem");
+function contagem(sh){
+  if(sh.f) return S.os.filter(sh.f).length;
+  if(sh.k==="fotos") return S.os.filter(o=>daMed(o)&&o.ft.length).length;
+  if(sh.k==="vinculadas") return S.os.filter(o=>o.ab.includes("vinc")).length;
+  if(sh.k==="reapresentar") return S.d.reapresentar.length;
+  return null;
+}
+
+function tagStatus(st){
+  const c = st==="Concluído"?"t-ok":st==="Executando"?"t-ex":st==="Pendente"?"t-pe":st==="Cancelada"?"t-cz":st?"t-ex":"t-cz";
+  return st?`<span class="tag ${c}">${esc(st)}</span>`:"";
+}
+const fonteHTML = () => `<p class="fonte">Gerada do sistema (banco central da VPS) em <b>${esc(M().gerado_em)}</b>, com as mesmas regras da Planilha Mestra do mês. Não edite aqui: corrija no app e peça para atualizar. TIPO e CÓDIGO EMOP ficam em branco (quem lança preenche). Avisos marcados ANÁLISE não estão no banco.</p>`;
+
+/* ================= navegação (cada aba tem endereço: #andamento, #fotos…) ================= */
+function drawSheets(){
+  $("#sheets").innerHTML = SHEETS.map(sh=>{const n=contagem(sh);return `<a href="#${sh.k}" class="${S.view===sh.k?"on":""}" ${S.view===sh.k?'aria-current="page"':""}>${esc(subst(sh.t))}${n!=null?`<span class="n">${n}</span>`:""}</a>`}).join("");
+  const on=$("#sheets a.on"); if(on) on.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+function rota(){ const h=(location.hash||"").replace("#",""); S.view = SHEETS.some(s=>s.k===h)?h:"conferencia"; draw(); }
+window.addEventListener("hashchange", ()=>{ rota(); window.scrollTo(0,0); });
+
+function draw(){
+  if(!S.d) return;
+  drawSheets();
+  const m=$("#app"), sh=sheet(S.view);
+  if(sh.k==="conferencia") vConf(m);
+  else if(sh.k==="fotos") vFotos(m);
+  else if(sh.k==="vinculadas") vVinc(m);
+  else if(sh.k==="reapresentar") vReap(m);
+  else vTabela(m, sh);
+  $("#baixar").disabled = !S.dl;
+  $("#baixar").title = S.dl ? "" : "O download fica disponível ao abrir pelo Claude";
+}
+
+/* ================= Conferência ================= */
+const tipoProb = p => String(p).replace(/\(.*|[0-9]+/g,"").replace(/\s+/g," ").trim();
+function vConf(m){
+  const R=Object.fromEntries(S.d.resumo), med=M().med;
+  const n = k => R[k]??0;
+  const probs=S.d.problemas;
+  const tipos={}; probs.forEach(p=>{const t=tipoProb(p[4]);tipos[t]=(tipos[t]||0)+1});
+  const lista=S.prob?probs.filter(p=>tipoProb(p[4])===S.prob):probs;
+  const fig=(cls,v,t,k)=>`<button class="fig ${cls}" ${k?`data-go="${k}"`:""}><b class="num">${v}</b><span>${esc(t)}</span></button>`;
+  const futura=Object.entries(S.d.med_futura||{});
+  m.innerHTML=`
+  <h1>Conferência da ${esc(med)} (${esc(M().ini.slice(0,5))} a ${esc(M().fim.slice(0,5))})</h1>
+  ${fonteHTML()}
+  <div class="figs">
+    ${fig("",n(`${med} EM ANDAMENTO (com nº oficial)`),"em andamento (com nº)","andamento")}
+    ${fig("ok",n("   ... PRONTAS P/ APRESENTAR (nº + memória + 3 fotos + executor)"),"prontas p/ apresentar","prontas")}
+    ${fig("at",n("   ... COMPLETAR ANTES (risco de glosa)"),"completar antes (risco de glosa)","completar")}
+    ${fig("",n(`${med} SEM Nº (fictícias feitas, sem nº oficial)`),"feitas sem nº oficial","sem-numero")}
+    ${fig("ru",probs.length,"itens de conferência abertos","")}
+    ${fig("at",S.d.emitidas_sem_baixa.length,"emitidas no período sem baixa","")}
+  </div>
+  ${futura.length?`<div class="notice"><b>Atenção:</b> O.S. marcadas em medição FUTURA: ${futura.map(([k,v])=>esc(k)+" ("+v+")").join(", ")}.</div>`:""}
+  <section class="panel"><h2>Resumo (igual à aba CONFERÊNCIA do Excel)</h2><div class="tw" style="max-height:none"><table><tbody>
+    ${S.d.resumo.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n"><b>${esc(v)}</b></td></tr>`).join("")}
+  </tbody></table></div></section>
+  <section class="panel"><h2>Itens de conferência (${probs.length})</h2>
+    <div class="chips"><button class="chip ${S.prob?"":"on"}" data-p="">Todos (${probs.length})</button>${Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`<button class="chip ${S.prob===t?"on":""}" data-p="${esc(t)}">${esc(t.toLowerCase())} (${c})</button>`).join("")}</div>
+    ${tabelaSimples(["ABA","OS","UNIDADE","EXECUTOR","PROBLEMA","O QUE FAZER"], lista, 1)}
+  </section>
+  <section class="panel"><h2>O.S. emitidas no período ainda sem baixa (${S.d.emitidas_sem_baixa.length})</h2><p class="hint">Não entram na ${esc(med)} enquanto não forem concluídas.</p>
+    ${tabelaSimples(["STATUS","OS","UNIDADE","FISCAL","O QUE O FISCAL SOLICITOU"], S.d.emitidas_sem_baixa, 1)}</section>
+  <section class="panel"><h2>Serviços "Executando" sem número (${S.d.executando_sem_numero.length})</h2><p class="hint">Abrir no app e colocar o nº da O.S. certa (evita contar 2 vezes).</p>
+    ${tabelaSimples(["STATUS","OS","UNIDADE","EXECUTOR","O QUE O FISCAL SOLICITOU"], S.d.executando_sem_numero, 1)}</section>`;
+  m.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.go}));
+  m.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{S.prob=b.dataset.p;draw()}));
+  ligaLinhas(m);
+  S.atual={tipo:"conf", lista};
+}
+/* tabela de linhas prontas (arrays); colRef = índice da coluna com o nº da O.S. (abre a ficha) */
+function tabelaSimples(cab, linhas, colRef){
+  if(!linhas.length) return '<div class="empty">Nada aqui.</div>';
+  return `<div class="tw"><table class="grid"><thead><tr>${cab.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>
+    ${linhas.map(l=>{const o=S.byRef[String(l[colRef])];return `<tr ${o?`data-id="${o.id}"`:""}>${l.map((v,i)=>i===colRef?`<td>${o?`<button class="lnk" data-id="${o.id}">${esc(v)}</button>`:esc(v)}</td>`:i===0&&cab[0]==="STATUS"?`<td>${tagStatus(v)}</td>`:`<td><div class="${String(v).length>60?"lt":""}">${esc(v)}</div></td>`).join("")}</tr>`}).join("")}
+  </tbody></table></div>`;
+}
+
+/* ================= abas de O.S. (tabela no jeito da planilha) ================= */
+const chaveSort = (o,k) => {
+  const v=val(o,k);
+  if(k==="os"){const n=parseInt(v,10);return isNaN(n)?[1,String(v)]:[0,n]}
+  if(k==="en"||k==="co"){const p=String(v).split("/");return [0,p.length===3?p[2]+p[1]+p[0]:""]}
+  if(k==="_fotos") return [0,o.ft.length];
+  return [0,norm(v)];
+};
+function colsDe(sh){ const base=S.todasCols?COLS:COLS.filter(c=>c[2]); return sh.extra?[...base.slice(0,2),[sh.extra[0],sh.extra[1],1],...base.slice(2)]:base; }
+function linhasDe(sh){
+  const all=S.os.filter(sh.f), q=norm(S.busca[sh.k]||""), st=S.status[sh.k]||"";
+  let rows=all.filter(o=>(!st||o.st===st)&&(!q||S.idx[o.id].includes(q)));
+  const so=S.sort[sh.k];
+  if(so){ rows=rows.slice().sort((a,b)=>{const x=chaveSort(a,so.k),y=chaveSort(b,so.k);return (x[0]-y[0]||(x[1]<y[1]?-1:x[1]>y[1]?1:0))*so.d}); }
+  return {all, rows};
+}
+function vTabela(m, sh){
+  const {all, rows}=linhasDe(sh), cols=colsDe(sh), lim=S.lim[sh.k]||150, so=S.sort[sh.k];
+  const sts=[...new Set(all.map(o=>o.st).filter(Boolean))].sort();
+  m.innerHTML=`
+  <h1>${esc(subst(sh.t))}</h1>
+  <p class="sub">${esc(subst(sh.tit))}</p>
+  ${fonteHTML()}
+  <div class="bar">
+    <input class="in" id="busca" type="search" placeholder="Buscar nº, escola, serviço, equipe, memória…" value="${esc(S.busca[sh.k]||"")}" aria-label="Buscar nesta aba">
+    <select class="in" id="fst" aria-label="Filtrar por status"><option value="">Todos os status (${all.length})</option>${sts.map(s=>`<option value="${esc(s)}" ${S.status[sh.k]===s?"selected":""}>${esc(s)} (${all.filter(o=>o.st===s).length})</option>`).join("")}</select>
+    <label class="chk"><input type="checkbox" id="tcols" ${S.todasCols?"checked":""}> as 21 colunas da planilha</label>
+  </div>
+  <p class="hint num">${rows.length===all.length?`${all.length} O.S.`:`${rows.length} de ${all.length} O.S.`} · clique no título da coluna para ordenar · clique na linha para ver a ficha completa e as fotos</p>
+  ${rows.length?`<div class="tw"><table class="grid"><thead><tr>${cols.map(c=>`<th class="so" data-s="${c[0]}" aria-sort="${so&&so.k===c[0]?(so.d>0?"ascending":"descending"):"none"}">${esc(c[1])}${so&&so.k===c[0]?(so.d>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead>
+  <tbody>${rows.slice(0,lim).map(o=>linha(o,cols)).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma O.S. com esse filtro.</div>'}
+  ${rows.length>lim?`<div class="acts"><button class="btn" id="mais">Mostrar mais ${Math.min(300,rows.length-lim)}</button><span class="hint num">faltam ${rows.length-lim}</span></div>`:""}`;
+  const b=$("#busca");
+  b.addEventListener("input",()=>{S.busca[sh.k]=b.value;clearTimeout(vTabela._t);vTabela._t=setTimeout(()=>{const p=b.selectionStart;S.lim[sh.k]=150;draw();const n=$("#busca");if(n){n.focus();try{n.setSelectionRange(p,p)}catch(e){}}},220)});
+  $("#fst").addEventListener("change",e=>{S.status[sh.k]=e.target.value;S.lim[sh.k]=150;draw()});
+  $("#tcols").addEventListener("change",e=>{S.todasCols=e.target.checked;draw()});
+  m.querySelectorAll("th.so").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.s,c=S.sort[sh.k];S.sort[sh.k]=c&&c.k===k?(c.d>0?{k,d:-1}:null):{k,d:1};draw()}));
+  const mais=$("#mais"); if(mais) mais.addEventListener("click",()=>{S.lim[sh.k]=lim+300;draw()});
+  ligaLinhas(m);
+  S.atual={tipo:"os", sh, rows, cols};
+}
+function linha(o,cols){
+  return `<tr data-id="${o.id}">${cols.map(([k])=>{
+    const v=val(o,k);
+    if(k==="os") return `<td><button class="lnk" data-id="${o.id}">${esc(v)}</button></td>`;
+    if(k==="st") return `<td>${tagStatus(v)}</td>`;
+    if(k==="fa") return `<td><div class="lt falta">${esc(v)}</div></td>`;
+    if(k==="si") return `<td><div class="lt ${String(v)==="PRONTA"?"pronta":"falta"}">${esc(v)}</div></td>`;
+    if(k==="mc"&&!String(v).trim()) return `<td><span class="vazio">—</span></td>`;
+    if(k==="_fotos") return `<td class="n ${o.ft.length<3?"falta":""}">${esc(v||"0")}</td>`;
+    if(k==="va"&&v) return `<td><div class="lt falta">${esc(v)}</div></td>`;
+    return `<td><div class="${LONGAS.has(k)?"lt":MEDIAS.has(k)?"md":""}">${esc(v)}</div></td>`;
+  }).join("")}</tr>`;
+}
+function ligaLinhas(m){
+  m.querySelectorAll("tbody tr[data-id]").forEach(tr=>tr.addEventListener("click",e=>{ if(e.target.closest("a"))return; abrir(+tr.dataset.id, e.target.closest("button")||tr); }));
+}
+
+/* ================= Vinculadas e Reapresentar ================= */
+function vVinc(m){
+  const sh=sheet("vinculadas");
+  const lista=S.os.filter(o=>o.ab.includes("vinc")).sort((a,b)=>String(a.pr).localeCompare(String(b.pr),"pt-BR",{numeric:true}));
+  const linhas=lista.map(o=>[o.fr||o.os, o.pr||"", o.un, o.ex, o.se]);
+  m.innerHTML=`<h1>Vinculadas</h1><p class="sub">${esc(sh.tit)}</p>${fonteHTML()}${tabelaSimples(["FICTÍCIA","VINCULADA À OFICIAL","UNIDADE","EXECUTOR","SERVIÇO DA EMERGÊNCIA"], linhas, 0)}`;
+  ligaLinhas(m); S.atual={tipo:"arr", nome:"VINCULADAS", cab:["FICTICIA","VINCULADA A OFICIAL","UNIDADE","EXECUTOR","SERVICO DA EMERGENCIA"], linhas};
+}
+function vReap(m){
+  const sh=sheet("reapresentar"), cab=["APRESENTADA EM","OS","UNIDADE","STATUS","MEDIÇÃO NO SISTEMA","MEMÓRIA","FOTOS","Nº OFICIAL","SITUAÇÃO"];
+  const linhas=S.d.reapresentar, prontas=linhas.filter(r=>String(r[8]).startsWith("PRONTA")).length;
+  m.innerHTML=`<h1>Reapresentar MED 9-10</h1><p class="sub">${esc(sh.tit)}</p>${fonteHTML()}
+  <div class="figs" style="max-width:420px"><div class="fig"><b class="num">${linhas.length}</b><span>não aprovadas</span></div><div class="fig ok"><b class="num">${prontas}</b><span>já prontas para entrar</span></div></div>
+  ${tabelaSimples(cab, linhas.map(r=>r.map((v,i)=>i===3?v:v)), 1)}`;
+  m.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.lastElementChild; if(td&&/^PRONTA/.test(td.textContent)) td.querySelector("div").classList.add("pronta"); else if(td) td.querySelector("div").classList.add("falta");});
+  m.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.children[3]; if(td) td.innerHTML=tagStatus(td.textContent.trim());});
+  ligaLinhas(m); S.atual={tipo:"arr", nome:"REAPRESENTAR MED 9-10", cab, linhas};
+}
+
+/* ================= Fotos (miniaturas embutidas: o painel não abre imagem de fora) ================= */
+function vFotos(m){
+  const sh=sheet("fotos"), lista=S.os.filter(o=>daMed(o)&&o.ft.length), sem=S.os.filter(o=>daMed(o)&&!o.ft.length);
+  const total=lista.reduce((a,o)=>a+o.ft.length,0);
+  m.innerHTML=`<h1>${esc(subst(sh.t))}</h1><p class="sub">${esc(subst(sh.tit))}</p>${fonteHTML()}
+  <p class="hint num">${total} fotos em ${lista.length} O.S. · toque numa foto para abrir no tamanho original${sem.length?` · <span class="falta">${sem.length} O.S. da medição sem nenhuma foto: ${sem.map(o=>esc(o.os)).join(", ")}</span>`:""}</p>
+  ${lista.map(o=>`<section class="fcard" data-fid="${o.id}"><div class="hd"><button class="lnk ref" data-id="${o.id}">${esc(o.os)}</button><b>${esc(o.un)}</b>${tagStatus(o.st)}<span class="hint ${o.ft.length<3?"falta":""}">${o.ft.length} foto${o.ft.length===1?"":"s"}</span></div>
+    <div class="fotos" id="g-${o.id}">${galeria(o)}</div></section>`).join("")||'<div class="empty">Nenhuma foto na medição.</div>'}`;
+  m.querySelectorAll(".fcard .lnk").forEach(b=>b.addEventListener("click",()=>abrir(+b.dataset.id,b)));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ io.unobserve(e.target); const id=+e.target.dataset.fid; pedeThumbs(id,()=>{const g=document.getElementById("g-"+id); if(g) g.innerHTML=galeria(S.byId[id]);}); } }),{rootMargin:"300px"});
+  m.querySelectorAll(".fcard").forEach(c=>io.observe(c));
+  S.atual={tipo:"fotos", lista};
+}
+function galeria(o){
+  const th=S.thumbs[o.id];
+  return o.ft.map((u,i)=>{const t=Array.isArray(th)?th[i]:null;
+    return t?`<a class="foto" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(t)}" alt="Foto ${i+1} de ${o.ft.length} da O.S. ${esc(o.os)}" loading="lazy"><span>${i+1}</span></a>`
+            :`<a class="foto sem" href="${esc(u)}" target="_blank" rel="noopener">${Array.isArray(th)?"abrir foto "+(i+1):"carregando…"}</a>`}).join("");
+}
+function pedeThumbs(id, depois){
+  const o=S.byId[id]; if(!o||!o.ft.length) return;
+  if(Array.isArray(S.thumbs[id])){ depois&&depois(); return; }
+  if(S.thumbs[id]==="carregando"){ (pedeThumbs.fila[id]=pedeThumbs.fila[id]||[]).push(depois); return; }
+  S.thumbs[id]="carregando"; pedeThumbs.fila[id]=[depois];
+  fetch(`data/fotos/${id}.json`).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{S.thumbs[id]=Array.isArray(j)?j:[]}).catch(()=>{S.thumbs[id]=[]})
+    .finally(()=>{ (pedeThumbs.fila[id]||[]).forEach(f=>f&&f()); delete pedeThumbs.fila[id]; });
+}
+pedeThumbs.fila={};
+
+/* ================= ficha da O.S. ================= */
+const NOMES_ABA = {and:"{MED} em andamento", pronta:"{MED} pronta p/ apresentar", completar:"{MED} completar antes", sem:"{MED} sem nº", aguard:"Aguardando nº", vinc:"Vinculadas", barrada:"Fora da medição (já aprovada)"};
+function abrir(id, deOnde){
+  const o=S.byId[id]; if(!o) return;
+  S.voltaFoco=deOnde||document.activeElement;
+  const campos=COLS.filter(c=>c[0]!=="os"&&c[0][0]!=="_").map(([k,t])=>[t,o[k]]);
+  if(o.fa) campos.unshift(["O QUE FALTA",o.fa]);
+  if(o.fr) campos.push(["REFERÊNCIA FICTÍCIA",o.fr]);
+  if(o.pr) campos.push(["VINCULADA À OFICIAL",o.pr]);
+  $("#dw").innerHTML=`<div class="hd"><h2 id="dwt">O.S. ${esc(o.os)} · ${esc(o.un)}</h2><button class="btn" id="fechar">Fechar</button></div>
+    <div>${tagStatus(o.st)} ${o.ab.map(a=>`<span class="tag ${a==="pronta"?"t-ok":a==="completar"||a==="barrada"?"t-ru":"t-ex"}">${esc(subst(NOMES_ABA[a]||a))}</span>`).join(" ")}</div>
+    <dl>${campos.map(([t,v])=>`<dt>${esc(t)}</dt><dd class="${t==="O QUE FALTA"?"falta":""}">${String(v??"").trim()?esc(v):'<span class="vazio">— nada lançado no app</span>'}</dd>`).join("")}</dl>
+    <h2>Fotos (${o.ft.length})</h2>
+    ${o.ft.length?`<div class="fotos" id="dwf">${galeria(o)}</div>`:'<p class="falta">Nenhuma foto no app.</p>'}`;
+  $("#ov").hidden=false; document.body.style.overflow="hidden";
+  $("#fechar").addEventListener("click",fechar); $("#fechar").focus();
+  if(o.ft.length) pedeThumbs(o.id,()=>{const g=$("#dwf"); if(g&&!$("#ov").hidden) g.innerHTML=galeria(o);});
+}
+function fechar(){ $("#ov").hidden=true; document.body.style.overflow=""; const f=S.voltaFoco; if(f&&document.contains(f)) try{f.focus()}catch(e){} }
+$("#ov").addEventListener("click",e=>{ if(e.target.id==="ov") fechar(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#ov").hidden) fechar(); });
+
+/* ================= baixar a aba em Excel ================= */
+$("#baixar").addEventListener("click", async ()=>{
+  if(!S.dl){toast("O download fica disponível ao abrir pelo Claude.");return}
+  if(typeof XLSX==="undefined"){toast("O gerador de planilha não carregou. Recarregue a página.");return}
+  const A=S.atual, sh=sheet(S.view), titulo=subst(sh.t);
+  let cab=[], linhas=[];
+  if(A.tipo==="os"){
+    const cs=COLS.slice(); if(sh.extra) cs.splice(2,0,[sh.extra[0],sh.extra[1]]);
+    cab=[...cs.map(c=>c[1]),"LINKS DAS FOTOS"];
+    linhas=A.rows.map(o=>[...cs.map(([k])=>val(o,k)),o.ft.join(" | ")]);
+  } else if(A.tipo==="conf"){
+    cab=["ABA","OS","UNIDADE","EXECUTOR","PROBLEMA","O QUE FAZER"]; linhas=A.lista;
+  } else if(A.tipo==="fotos"){
+    cab=["OS","UNIDADE","FOTO","LINK DA FOTO"]; A.lista.forEach(o=>o.ft.forEach((u,i)=>linhas.push([o.os,o.un,`${i+1} de ${o.ft.length}`,u])));
+  } else { cab=A.cab; linhas=A.linhas; }
+  const aoa=[[`PLANILHA MESTRA FP.094 — ${titulo}`],[`Gerada do sistema em ${M().gerado_em} (painel). Não editar aqui: edite no app e gere de novo.`],[],cab,...linhas];
+  if(A.tipo==="conf") aoa.splice(3,0,...S.d.resumo.map(r=>[r[0],r[1]]),[]);
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(aoa);
+  XLSX.utils.book_append_sheet(wb, ws, titulo.replace(/[\\\/?*\[\]:]/g,"-").slice(0,31));
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  const nome=`MESTRA ${M().med.replace(/\s/g,"")} - ${titulo.replace(/[\\\/?*\[\]:"<>|]/g,"-")} - ${M().gerado_em.slice(0,10).split("/").reverse().join("-")}.xlsx`;
+  try{ await S.dl.save({filename:nome, data:new Uint8Array(buf)}); toast("Planilha salva."); }
+  catch(e){ toast(e&&e.code==="declined"?"Download cancelado.":"Não foi possível baixar agora."); }
+});
+
+/* ================= carga ================= */
+(async()=>{
+  try{
+    const d=await fetch(ARQ).then(r=>{if(!r.ok)throw 0;return r.json()});
+    S.d=d; S.os=d.os||[];
+    S.os.forEach(o=>{ S.byId[o.id]=o; if(!(o.os in S.byRef)) S.byRef[o.os]=o; if(o.fr&&!(o.fr in S.byRef)) S.byRef[o.fr]=o;
+      S.idx[o.id]=norm([o.os,o.fr,o.pr,o.un,o.fi,o.ex,o.st,o.me,o.so,o.se,o.ma,o.al,o.mc,o.va].join(" ")); });
+    $("#brandsub").textContent=`FP Vieira Engenharia · Educação FP.094 · ${d.meta.med}`;
+    $("#carimbo").textContent=`Puxada do banco: ${d.meta.gerado_em}`;
+    rota();
+  }catch(e){ $("#app").innerHTML='<div class="empty">Não consegui carregar a planilha. Recarregue a página.</div>'; }
+  const C=window.claude;
+  if(C&&typeof C.use==="function"){ try{ const dl=await C.use("downloads"); if(dl){S.dl=dl; if(S.d) draw();} }catch(e){} }
+})();
+</script>
+</body>
+</html>
