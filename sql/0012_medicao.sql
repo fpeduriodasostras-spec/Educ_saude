@@ -1,7 +1,7 @@
 -- =====================================================================
 -- 0012 · A MEDIÇÃO PASSA A MORAR NO BANCO
 -- Banco da VPS (supabase.arkaisolutions.app.br) · PROPOSTA de 14/11/2026
--- ⚠️ NÃO APLICADA. SQL em produção passa por revisão antes (Renan/Leony).
+-- ✅ APLICADA em 18/11/2026 14:56 no banco da VPS (OK do Leony). Desfazer: 0012_desfazer.sql
 --
 -- Por quê: o Painel do Medidor produz trabalho que hoje fica espalhado —
 -- lançamentos (código EMOP + conta por O.S.) só dentro do painel no Claude,
