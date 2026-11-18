@@ -79,6 +79,22 @@ código + conta e ir para a próxima. Lançamentos ficam no banco do próprio ar
     ssh arka "python3 - MED 12 2026-11-02 2026-12-01 fotos edu 640" < scripts/exporta_painel.py > fotos.tsv
     # fotos.tsv -> front/data/fotos_vga/<id>.json (640 px = "VGA", o tamanho do relatório oficial)
 
+## A medição no banco (sql/0012) — PROPOSTA de 14/11/2026, ainda NÃO aplicada
+
+`sql/0012_medicao.sql` cria 4 tabelas novas no Supabase da VPS, sem mexer em nada que existe:
+`contrato_item` (itens dos contratos), `medicao` (cada medição e situação), `medicao_os` (a O.S.
+dentro da medição: lançada/pulada, fotos e legenda do relatório, resultado da fiscalização) e
+`medicao_lancamento` (a memória de cálculo). Mais 4 visões prontas (memória de cálculo, resumo por
+item, saldo por item, O.S. aprovada em duas medições). Permissões: anon sem acesso; qualquer login lê
+os itens do contrato; medição só a equipe (`fpv_equipe_medicao()`); medição fechada não muda.
+`sql/0012b_medicao_dados.sql` (gerado por `scripts/gera_seed_medicao.py`) carrega 288 itens da
+Educação (acumulado oficial até a MED 09) + 319 da Saúde (medido até a MED 05) e as duas medições abertas.
+
+Testado em 14/11 num Postgres DESCARTÁVEL (imagem supabase/postgres 15.8, sem rede, apagado no fim):
+rodou 2× sem erro e sem duplicar; casos em `sql/teste/` (equipe lança; item de outro contrato dá erro;
+quem não é da equipe e anon não veem; medição fechada trava; aviso de O.S. aprovada 2×).
+Para aplicar: revisão + fora do horário de campo; depois copiar para a pasta de migrations do app.
+
 ## Regras herdadas do projeto (não negociar sem o Renan)
 
 - Planilhas originais do contrato são **somente leitura**; todo produto nasce em arquivo novo.

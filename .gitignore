@@ -6,3 +6,5 @@ front/data/fotos_vga/
 front/data/mestra_*.json
 front/data/os_*.json
 front/data/atual.json
+# pacote .zip de revisão (cópia dos .sql)
+sql/*.zip
