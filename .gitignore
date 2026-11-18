@@ -8,3 +8,5 @@ front/data/os_*.json
 front/data/atual.json
 # pacote .zip de revisão (cópia dos .sql)
 sql/*.zip
+# carga gerada com números de O.S. (refaz com scripts/gera_aprovadas_historicas.py)
+sql/0012c_*.sql

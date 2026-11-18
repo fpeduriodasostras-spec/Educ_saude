@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel do Medidor FPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEEEA; --surface:#FFFFFF; --surface2:#F6F7F4; --ink:#1D2630; --ink2:#4A5560; --muted:#6B757E;
+  --line:#D3D8D2; --line2:#E4E7E2; --blue:#1F4E79; --blue2:#2D6AA3; --bluesoft:#DCEBFA;
+  --yellow:#F2B705; --yellowsoft:#FFF2CC; --lanc:#FFFBB8; --red:#B3261E; --redsoft:#FBE3E1;
+  --green:#2E7D4F; --greensoft:#D7EFDC; --orange:#9A5205; --topbar:#1D2630;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif; --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8F99A2;
+    --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1C2F44;
+    --yellow:#F2B705; --yellowsoft:#3A3212; --lanc:#38361A; --red:#F08A82; --redsoft:#3D1F1D;
+    --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171C; --surface:#1A2129; --surface2:#202832; --ink:#E8ECEF; --ink2:#B9C2CA; --muted:#8F99A2;
+  --line:#2F3A45; --line2:#26303A; --blue:#7FB0E0; --blue2:#9CC3EA; --bluesoft:#1C2F44;
+  --yellow:#F2B705; --yellowsoft:#3A3212; --lanc:#38361A; --red:#F08A82; --redsoft:#3D1F1D;
+  --green:#7CCB9A; --greensoft:#1B3326; --orange:#F0A35A; --topbar:#0D1116;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--body)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--topbar);color:#fff}
+.top-in{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:21px;line-height:1}
+.brand small{display:block;font-family:var(--body);font-weight:400;font-size:11.5px;color:#AEB8C1;margin-top:2px}
+.topr{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.carimbo{font-size:12px;color:#C9D1D8}
+.top select{background:#2A3542;color:#fff;border:1px solid #3A4654;border-radius:var(--r);padding:6px 8px;font-size:13px}
+.btnt{border:1px solid #3A4654;background:#2A3542;color:#fff;border-radius:var(--r);padding:6px 10px;font-size:13px;cursor:pointer}
+.btnt:hover{background:#34414F}
+.stripe{height:5px;background:repeating-linear-gradient(-45deg,var(--yellow) 0 10px,#1D2630 10px 20px)}
+.sheets{display:flex;gap:3px;overflow-x:auto;padding:7px 16px 0;background:var(--surface2);border-bottom:1px solid var(--line);scrollbar-width:thin}
+.sheets a{flex:none;padding:7px 12px 6px;border:1px solid var(--line);border-bottom:none;border-radius:6px 6px 0 0;background:var(--bg);color:var(--ink2);font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap}
+.sheets a:hover{color:var(--ink)}
+.sheets a.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:inset 0 3px 0 var(--blue)}
+.sheets a.main{font-weight:600}
+.sheets a .n{font-size:11px;color:var(--muted);margin-left:6px;font-variant-numeric:tabular-nums}
+main{max-width:1440px;margin:0 auto;padding:16px 16px 80px}
+h1{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.1;margin:4px 0 4px}
+h2{font-family:var(--display);font-weight:700;font-size:20px;margin:0 0 8px}
+h3{font-family:var(--display);font-weight:700;font-size:17px;margin:12px 0 6px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 6px}
+.fonte{font-size:12px;color:var(--muted);margin:0 0 14px}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.fig{background:var(--surface);padding:10px 14px;border:none;text-align:left;color:var(--ink)}
+button.fig{cursor:pointer} button.fig:hover{background:var(--bluesoft)}
+.fig b{display:block;font-family:var(--display);font-weight:700;font-size:28px;line-height:1.05}
+.fig span{color:var(--ink2);font-size:12px}
+.fig.ok b{color:var(--green)} .fig.at b{color:var(--orange)} .fig.ru b{color:var(--red)}
+.prog{height:10px;background:var(--surface2);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:0 0 6px}
+.prog i{display:block;height:100%;background:var(--green)}
+.legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin:0 0 10px}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid var(--line)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.in{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 10px;font-size:14px;color:var(--ink)}
+input.in{flex:1;min-width:200px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 11px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--ink2)}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+:root[data-theme="dark"] .chip.on{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.on{color:#12171C}}
+.hint{font-size:12px;color:var(--muted);margin:0 0 6px}
+.notice{background:var(--yellowsoft);border:1px solid var(--yellow);border-radius:var(--r);padding:10px 12px;font-size:13px;margin-bottom:12px}
+.notice.erro{background:var(--redsoft);border-color:var(--red)}
+.tw{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+th{position:sticky;top:0;z-index:2;background:var(--surface2);text-align:left;font-weight:600;color:var(--ink2);font-size:11.5px;letter-spacing:.02em;border-bottom:2px solid var(--ink);padding:7px 8px;white-space:nowrap}
+th.so{cursor:pointer;user-select:none} th.so:hover{color:var(--ink)}
+th.sug{background:var(--bluesoft)} th.lan{background:var(--lanc)}
+td{padding:6px 8px;border-bottom:1px solid var(--line2);vertical-align:top;background:var(--surface)}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.grid td:first-child,.grid th:first-child{position:sticky;left:0;z-index:1;border-right:1px solid var(--line2)}
+.grid th:first-child{z-index:3}
+.grid tbody tr{cursor:pointer}
+.grid tbody tr:hover td{filter:brightness(.97)}
+tr.lancada td{background:var(--greensoft)}
+tr.pulada td{color:var(--muted)}
+td.cfalta{background:var(--yellowsoft);color:var(--orange);font-weight:600}
+td.csug{background:var(--bluesoft)}
+td.clan{background:var(--lanc);font-weight:600}
+tr.lancada td.csug,tr.lancada td.clan{background:var(--greensoft)}
+.lt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-width:200px;max-width:330px}
+.md{min-width:150px;max-width:240px}
+.lnk{border:none;background:none;padding:0;font:700 14px var(--display);color:var(--blue);cursor:pointer;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.t-ok{background:var(--greensoft);color:var(--green)} .t-ex{background:var(--bluesoft);color:var(--blue)}
+.t-pe{background:var(--yellowsoft);color:var(--orange)} .t-ru{background:var(--redsoft);color:var(--red)}
+.t-cz{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.falta{color:var(--orange);font-weight:600} .pronta{color:var(--green);font-weight:600} .vazio{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:var(--r);cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.btn:hover{border-color:var(--ink2)}
+.btn.pri{background:var(--yellow);border-color:var(--yellow);color:#1D2630}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+:root[data-theme="dark"] .btn.ok{color:#12171C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.ok{color:#12171C}}
+.btn.ghost{border-style:dashed;color:var(--ink2)}
+.btn:disabled{opacity:.5;cursor:default}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.foto{position:relative;display:block;width:112px;height:112px;border:2px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto.sel{border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow)}
+.foto input{position:absolute;top:5px;left:5px;width:17px;height:17px}
+.foto a,.foto .k{position:absolute;bottom:3px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;padding:1px 6px;border-radius:4px;text-decoration:none}
+.foto a{right:3px} .foto .k{left:3px}
+.ov{position:fixed;inset:0;background:rgba(10,14,18,.5);z-index:60;display:flex;justify-content:flex-end}
+.ov[hidden]{display:none}
+.dw{background:var(--surface);width:min(860px,100%);height:100%;overflow-y:auto;padding:0 18px 40px;box-shadow:-8px 0 24px rgba(0,0,0,.2)}
+.dwbar{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dwbar h2{margin:0;flex:1;min-width:220px}
+.dw dl{display:grid;grid-template-columns:170px 1fr;gap:5px 12px;font-size:13px;margin:10px 0}
+.dw dt{color:var(--ink2);font-weight:600;font-size:11.5px;letter-spacing:.02em;padding-top:2px}
+.dw dd{margin:0;white-space:pre-wrap;word-break:break-word}
+.bloco{border:1px solid var(--line);border-radius:var(--r);padding:12px;margin:12px 0;background:var(--surface)}
+.bloco.falt{background:var(--yellowsoft);border-color:var(--yellow)}
+.cands{display:grid;gap:6px;margin:8px 0}
+.cand{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--bluesoft);cursor:pointer}
+.cand input{margin-top:4px;width:16px;height:16px}
+.cand .cd{font:600 16px var(--display);white-space:nowrap}
+.cand .ds{font-size:12.5px;color:var(--ink2)}
+.cand .uso{font-size:11.5px;color:var(--muted)}
+.cand.sel{border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
+.addlist{display:grid;gap:4px;margin-top:6px}
+.additem{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:var(--r);padding:8px 10px;cursor:pointer}
+.additem:hover{border-color:var(--blue);background:var(--bluesoft)}
+.additem .cd{font:600 15px var(--display)} .additem .ds{font-size:12px;color:var(--ink2);display:block}
+.itemedit{border:1px solid var(--yellow);border-radius:var(--r);padding:10px;margin:8px 0;background:var(--lanc)}
+.itemedit .tt{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.itemedit .tt .cd{font:700 17px var(--display)}
+.itemedit .ds{font-size:12.5px;color:var(--ink2);margin:2px 0 8px}
+.tape{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tape input{flex:1;min-width:170px;border:2px solid var(--ink);border-radius:var(--r);padding:9px 10px;font:600 17px var(--display);letter-spacing:.02em;background:var(--surface);color:var(--ink)}
+.tape .res{font:700 24px var(--display);min-width:90px;text-align:right}
+.tape .res.bad{color:var(--red);font-size:14px;font-family:var(--body);font-weight:600}
+.memblk{border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden;background:var(--surface)}
+.memblk .hd{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--line)}
+.memblk .hd b{font:700 16px var(--display)}
+.memblk .tot{padding:6px 12px;text-align:right;font-weight:600;border-top:1px solid var(--line)}
+.relcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:10px}
+.relcard .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.relcard .ref{font:700 19px var(--display)}
+.mini{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.mini img{width:70px;height:52px;object-fit:cover;border-radius:4px;border:1px solid var(--line);background:var(--surface2)}
+.login{max-width:380px;margin:9vh auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px}
+.login h1{margin-bottom:2px} .login label{display:block;font-size:12.5px;color:var(--ink2);margin:12px 0 4px}
+.login input{width:100%}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);font-size:13.5px;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (max-width:640px){h1{font-size:24px}.fig b{font-size:23px}.dw{padding:0 12px 40px}.dw dl{grid-template-columns:1fr;gap:0}.dw dt{margin-top:8px}.tw{max-height:none}.carimbo{display:none}.foto{width:96px;height:96px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">PAINEL DO MEDIDOR<small id="brandsub">FP Vieira Engenharia · Educação FP.094</small></div>
+    <div class="topr" id="topr"></div>
+  </div>
+  <div class="stripe"></div>
+  <nav class="sheets" id="sheets" aria-label="Abas do painel"></nav>
+</header>
+<main id="app"><div class="empty">Carregando…</div></main>
+<div class="ov" id="ov" hidden><div class="dw" id="dw" role="dialog" aria-modal="true" aria-labelledby="dwt"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+"use strict";
+/* PAINEL DO MEDIDOR — versão CONECTADA (Vercel).
+   Lê as O.S. direto do banco (os_campo) e grava os lançamentos nas tabelas da 0012
+   (medicao, medicao_os, medicao_lancamento, contrato_item). Login = o mesmo do app.
+   As regras de quem entra na medição são as da Planilha Mestra (gerar_mestra.py), aqui em JS.
+   Cores da Mestra do Renan: VERDE = lançada · AMARELO = falta algo · AZUL = sugestão · AMARELO-CLARO = código lançado. */
+const CONTRATO_NOME = "Educação";
+const CONTRATO = {
+  objeto:"SERVIÇO COMUM DE ENGENHARIA DE MANUTENÇÃO PREVENTIVA E CORRETIVA PREDIAL, COM ADEQUAÇÕES, ADAPTAÇÕES E MODERNIZAÇÕES, INCLUINDO OS PROJETOS E MATERIAIS NECESSÁRIOS, PARA AS DEMANDAS DOS IMÓVEIS PRÓPRIOS, UTILIZADOS PELA SECRETARIA MUNICIPAL DE EDUCAÇÃO, ESPORTE E LAZER - SEMEDE DO MUNICÍPIO DE RIO DAS OSTRAS - RJ.",
+  secretaria:"SECRETARIA MUNICIPAL DE EDUCAÇÃO, ESPORTE E LAZER - SEMEDE", contrato:"Contrato 064/2025", firma:"F. P. VIEIRA ENGENHARIA LTDA",
+};
+const sb = window.supabase.createClient(window.FPV_CONFIG.url, window.FPV_CONFIG.anon, {auth:{persistSession:true,autoRefreshToken:true}});
+const S = { email:"", medicoes:[], M:null, d:null, os:[], med:[], byId:{}, byRef:{}, idx:{}, base:[], byCod:{}, byItemId:{}, ordem:{}, jur:{},
+  mos:[], lanc:[], dec:{}, estilos:{}, view:"medicao", filtro:"alancar", busca:{}, status:{}, sort:{}, lim:{}, todasCols:false, prob:"",
+  relTodas:false, ficha:null, lista:[], voltaFoco:null, atual:null, gerando:false, salvando:false, carregadoEm:"" };
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = t => String(t??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const nf2 = new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const f2 = v => (v==null||isNaN(v))?"–":nf2.format(v);
+const brl = v => (!v||isNaN(v))?"–":"R$ "+nf2.format(v);
+const br = d => { if(!d) return ""; const m=String(d).slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}/${m[2]}/${m[1]}`:String(d); };
+const iso = d => String(d||"").slice(0,10);
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),3200)}
+function wireFocus(id,p){ if(!id)return; const el=document.getElementById(id); if(el){el.focus(); if(p!=null) try{el.setSelectionRange(p,p)}catch(e){}} }
+/* fotos: miniatura feita pelo próprio servidor (imgproxy do Supabase) — 13 KB em vez de 270 KB */
+const mini = (u,w) => String(u).includes("/storage/v1/object/public/") ? String(u).replace("/storage/v1/object/public/","/storage/v1/render/image/public/")+`?width=${w}&height=${w}&resize=contain&quality=${w>400?75:60}` : u;
+
+/* ================= LOGIN ================= */
+function telaLogin(msg){
+  $("#topr").innerHTML=""; $("#sheets").innerHTML="";
+  $("#app").innerHTML=`<form class="login" id="flogin">
+    <h1>Entrar</h1><p class="sub">Use o mesmo login do app de campo.</p>
+    ${msg?`<div class="notice erro">${esc(msg)}</div>`:""}
+    <label for="lemail">Login</label><input class="in" id="lemail" autocomplete="username" placeholder="edmar ou edmar@fpv.app" required>
+    <label for="lsenha">Senha</label><input class="in" id="lsenha" type="password" autocomplete="current-password" required>
+    <div class="acts"><button class="btn pri" type="submit" id="lentrar">Entrar</button></div></form>`;
+  $("#flogin").addEventListener("submit",async e=>{
+    e.preventDefault(); const b=$("#lentrar"); b.disabled=true; b.textContent="Entrando…";
+    let email=$("#lemail").value.trim().toLowerCase(); if(email&&!email.includes("@")) email+="@fpv.app";
+    const {error}=await sb.auth.signInWithPassword({email,password:$("#lsenha").value});
+    if(error){ telaLogin(error.message==="Invalid login credentials"?"Login ou senha errados.":"Não deu para entrar: "+error.message); return; }
+    iniciar();
+  });
+  wireFocus("lemail");
+}
+async function sair(){ await sb.auth.signOut(); S.d=null; telaLogin(); }
+
+/* ================= LEITURA DO BANCO ================= */
+async function todas(tabela, colunas, filtro){
+  let out=[], de=0;
+  for(;;){
+    let q=sb.from(tabela).select(colunas).order("id").range(de,de+999); if(filtro) q=filtro(q);
+    const {data,error}=await q; if(error) throw new Error(`${tabela}: ${error.message}`);
+    out=out.concat(data); if(data.length<1000) break; de+=1000;
+  }
+  return out;
+}
+async function iniciar(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ telaLogin(); return; }
+  S.email=session.user.email||"";
+  $("#app").innerHTML='<div class="empty">Lendo o banco…</div>';
+  try{
+    const {data:meds,error}=await sb.from("medicao").select("*").eq("contrato",CONTRATO_NOME).order("numero",{ascending:false});
+    if(error) throw new Error("medicao: "+error.message);
+    S.medicoes=meds||[];
+    if(!S.medicoes.length){ $("#app").innerHTML=`<div class="login"><h1>Sem acesso à medição</h1><p class="sub">O login <b>${esc(S.email)}</b> não está na equipe de medição (Edmar, Lucas, Rafael, Renan, Leony), ou não há medição da ${esc(CONTRATO_NOME)} cadastrada.</p><div class="acts"><button class="btn" id="bsair">Sair</button></div></div>`; $("#bsair").addEventListener("click",sair); return; }
+    const sel=Number(sessionStorageGet("medicao"))||0;
+    S.M=S.medicoes.find(m=>m.id===sel)||S.medicoes.find(m=>m.situacao!=="fechada")||S.medicoes[0];
+    await carregar();
+  }catch(e){ $("#app").innerHTML=`<div class="login"><h1>Não consegui ler o banco</h1><div class="notice erro">${esc(e.message||e)}</div><div class="acts"><button class="btn pri" id="bdenovo">Tentar de novo</button><button class="btn" id="bsair">Sair</button></div></div>`; $("#bdenovo").addEventListener("click",iniciar); $("#bsair").addEventListener("click",sair); }
+}
+function sessionStorageGet(k){ try{return sessionStorage.getItem("fpv-"+k)}catch(e){return null} }
+function sessionStorageSet(k,v){ try{sessionStorage.setItem("fpv-"+k,v)}catch(e){} }
+async function carregar(){
+  $("#app").innerHTML='<div class="empty">Lendo as O.S., os itens do contrato e os lançamentos…</div>';
+  // relê as medições (uma nova pode ter sido aberta; e o nome de cada uma aparece na trava anti-dupla)
+  const {data:meds,error:em}=await sb.from("medicao").select("*").eq("contrato",CONTRATO_NOME).order("numero",{ascending:false});
+  if(em) throw new Error("medicao: "+em.message);
+  if(meds&&meds.length){ S.medicoes=meds; S.M=meds.find(m=>m.id===S.M.id)||S.M; }
+  const [itens, os, saidas, mos, lanc, jur] = await Promise.all([
+    todas("contrato_item","*",q=>q.eq("contrato",CONTRATO_NOME)),
+    todas("os_campo","id,numero,numero_fict,fict_ref,unidade,fiscal,classificacao,entrada,conclusao,executor,status,medicao,solicitado,servico,materiais,memoria_calculo,foto_urls,assinado,contrato,par_sugerido,criado_em",q=>q.or("excluida.is.null,excluida.eq.false")),
+    todas("saida_material","id,descricao,quantidade,unidade,os_ref,escola,data"),
+    todas("medicao_os","*"),
+    todas("medicao_lancamento","*"),
+    fetch("jurisprudencia.json").then(r=>r.ok?r.json():[]).catch(()=>[]),
+  ]);
+  S.base=itens.sort((a,b)=>(a.ordem??0)-(b.ordem??0)).map(i=>({id:i.id,item:i.item||"",cod:i.codigo_emop,desc:i.descricao,unid:i.unid,preco:Number(i.preco_com_bdi),qc:i.qtd_contratada}));
+  S.byCod={}; S.byItemId={}; S.ordem={}; S.base.forEach((b,i)=>{S.byCod[b.cod]=b;S.byItemId[b.id]=b;S.ordem[b.cod]=i});
+  S.jur={}; (jur||[]).forEach(j=>S.jur[j.cod]=j);
+  S.mos=mos; S.lanc=lanc;
+  montaMestra(os, saidas);
+  montaDecisoes();
+  S.carregadoEm=new Date().toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+  topo(); rota();
+}
+
+/* ================= REGRAS DA PLANILHA MESTRA (as do gerar_mestra.py) ================= */
+const UNIDADES_SAUDE=["SEMUSA (Sede)","Hospital Municipal Naelma Monteira (HMNM)","Pronto Socorro Maria Rosa da Conceição","UPA Valmir Hespanhol","Farmácia Municipal","Resgate 24h","ESF Âncora","ESF Cantagalo","ESF Cidade Praiana","ESF Cláudio Ribeiro","Clínica da Família Paulo H. Gussen","ESF Dona Edimeia (Edméia)","ESF Mar do Norte","ESF Nova Cidade","ESF Operário","ESF Recanto","ESF Rocha Leão","UBS Boca da Barra","UBS Jardim Mariléia","UBS Nova Esperança","UBS Nilson Gonçalves Marins","Extensão do Bosque (Sal Sal)","Ambulatório de Saúde Mental","CAPS","CAPSI Rui Ribeiro de Freitas","Centro de Reabilitação Rocha Leão (Cória Gomes)","Centro de Reabilitação Laércio Lúcio de Carvalho","NASCA (Saúde da Criança e Adolescente)","Residência Terapêutica I","Residência Terapêutica II","COGA (Gestão Auditoria)","DESGE","Galpão Recanto","Prefeitura","Caminhão Catarata / Tenda (eventos)","Pré-Operatório","Casa de Recuperação","Casa da Criança"];
+const TIPOS_ESC=new Set(["escola","e","m","em","creche","municipal","ciep","de","da","do","dos","das"]);
+const chaveEscola = s => norm(s).split(/[^a-z0-9]+/).filter(p=>p&&!TIPOS_ESC.has(p)).join(" ");
+const SAUDE_CHAVES=new Set(UNIDADES_SAUDE.map(chaveEscola));
+const ehSaude = o => norm(o.contrato||"").trim().startsWith("sa") || SAUDE_CHAVES.has(chaveEscola(o.unidade));
+const refOS = o => o.numero!=null?String(o.numero):(o.fict_ref||(o.numero_fict?`F-${o.numero_fict}`:"S/Nº"));
+const chaveOS = s => String(s||"").replace(/emerg[eê]ncial/gi,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const TIPOS=[
+  ["Caminhao limpa-fossa",["limpa fossa","limpa-fossa","caminhao","fossa"],"NAO-EMOP: terceirizado"],["Desentupimento",["desentup","entupid","entupi"],"NAO-EMOP: mao de obra"],
+  ["Quadro branco/Mobiliario",["quadro branco","quadro de aula","mural","mobiliario","armario","estante","prateleira"],"NAO-EMOP: mobiliario"],
+  ["Ar condicionado (rede)",["ar condicionado","ar-condicionado","split","btu"],"15.005.0215 + cabos"],["Bebedouro/Filtro",["bebedouro","filtro"],"18.017.0020 / 15.004.0255"],
+  ["Bomba dagua/Boia",["bomba","boia"],"18.029.0012 / 18.012.0090"],["Caixa descarga/Valvula",["descarga","valvula","caixa acoplada"],"18.019.0010 / 18.003.0003"],
+  ["Vaso/Anel de cera",["vaso","anel de cera","assento sanit","espude","spud"],"15.004.0108 / 18.002"],["Sifao",["sifao"],"18.013.0127"],["Torneira",["torneira"],"18.009/18.008"],
+  ["Caixa gordura/ralo",["caixa de gordura","ralo"],"15.002.0062/0063"],["Disjuntor",["disjuntor","quadro de energia","quadro de luz"],"15.007.0570..0611"],
+  ["Lampada/Luminaria",["lampada","luminaria","refletor","reator","bocal","spot","iluminac"],"15.020.0173/0170/0158"],["Tomada/Interruptor/Ponto",["tomada","interruptor","ponto eletric","ponto de energia"],"15.015.0250/0255"],
+  ["Ventilador/Dimmer",["ventilador","dimmer"],"(definir codigo c/ Renan)"],["Fechadura",["fechadura","macaneta","cadeado","trinco","tranca"],"14.007.0036/0041/0065"],
+  ["Vidro",["vidro","vidraca"],"14.004.0120/0121"],["Solda/Serralheria",["solda","serralh","portao","grade","alambrado","corrimao","trave"],"14.002.0010/0071/0132"],
+  ["Reparo porta/dobradica",["porta","dobradica","mola aerea"],"14.013/14.006/14.007"],["Telha/Telhado/Calha",["telha","telhado","calha","rufo","cumeeira","goteira"],"16.002/16.004"],
+  ["Forro (PVC/gesso)",["forro","gesso"],"13.175/13.180"],["Piso/Revestimento",["piso","ceramica","porcelanato","azulejo","revestiment","rejunte"],"13.330/13.030"],
+  ["Pintura esmalte/verniz",["esmalte","verniz"],"17.017.0320/0110"],["Pintura latex",["pintura","pintar","pintad","tinta","latex","massa corrida"],"17.018.0031/0185"],
+];
+function tipoEmop(o){
+  for(const [txt,suf] of [[o.servico,""],[o.solicitado," (pelo solicitado)"],[o.materiais," (pelo material)"]]){
+    const t=norm(txt); if(!t.trim()) continue;
+    for(const [nome,pal,cod] of TIPOS) if(pal.some(p=>t.includes(p))) return [nome,cod+suf];
+  }
+  return ["",""];
+}
+const temConteudo = s => String(s||"").replace(/_{3}\s*x\s*_{3}\s*=\s*_{3}\s*m²/g,"").replace(/___/g,"").trim().length>0;
+function comoMemoria(o){
+  const m=String(o.memoria_calculo||"").trim();
+  if(!m.replace(/[\s.,;:\-—]/g,"")) return "memória de cálculo (vazia"+(m?`: só '${m}'`:"")+")";
+  if(m.includes("___")) return "memória de cálculo (só o modelo do app ___)";
+  return `memória sem quantidade (escrito: '${m.slice(0,60)}')`;
+}
+const FEITO=new Set(["Concluído","Assinatura","Avaliando"]);
+function montaMestra(osBruto, saidas){
+  const M=S.M, MED=M.rotulo, INI=iso(M.inicio), FIM=iso(M.fim);
+  const edu=osBruto.filter(o=>!ehSaude(o)), nSaude=osBruto.length-edu.length;
+  // saídas do almoxarifado por O.S.
+  const saiPorRef={};
+  saidas.forEach(s=>{const r=String(s.os_ref||"").trim().replace(/^O\.?S\.?\s*/i,""); if(r)(saiPorRef[r]=saiPorRef[r]||[]).push(s)});
+  const materialAuto=o=>{const ss=saiPorRef[refOS(o)]||[];
+    const txt=ss.map(s=>`${nf2.format(Number(s.quantidade)||0)} ${s.unidade||""} ${s.descricao||""} (${br(s.data).slice(0,5)})`).join(" · ");
+    const outras=[...new Set(ss.map(s=>s.escola).filter(e=>e&&chaveEscola(e)!==chaveEscola(o.unidade)))].sort();
+    return [txt, ss.length||"", outras.length?"CONFERIR: almox="+outras.join(" / "):""];};
+  // trava anti-medição dupla: O.S. que a fiscalização APROVOU em outra medição (tabela medicao_os)
+  const rotuloDe={}; S.medicoes.forEach(m=>rotuloDe[m.id]=m.rotulo);
+  const aprovadaEm={}; S.mos.filter(x=>x.resultado_fiscal==="aprovada"&&x.medicao_id!==M.id).forEach(x=>(aprovadaEm[x.os_id]=aprovadaEm[x.os_id]||[]).push(rotuloDe[x.medicao_id]||"outra medição"));
+  const noPeriodo=o=>FEITO.has(o.status)&&o.conclusao&&iso(o.conclusao)>=INI&&iso(o.conclusao)<=FIM;
+  const daMedR=o=>String(o.medicao||"").trim()===MED||noPeriodo(o);
+  const fotos=o=>(o.foto_urls||[]).filter(Boolean);
+  const completa=o=>o.status==="Concluído"&&temConteudo(o.memoria_calculo)&&fotos(o).length>=3&&String(o.executor||"").trim();
+  const falta=o=>{const f=[]; if(o.status!=="Concluído")f.push(`concluir (${o.status})`); if(!temConteudo(o.memoria_calculo))f.push(comoMemoria(o));
+    if(fotos(o).length<3)f.push(`fotos (${fotos(o).length} de 3)`); if(!String(o.executor||"").trim())f.push("executor"); return f.join(", ");};
+  const ativas=edu.filter(o=>o.status!=="Cancelada");
+  const barradas=ativas.filter(o=>daMedR(o)&&aprovadaEm[o.id]);
+  const and=ativas.filter(o=>o.numero!=null&&daMedR(o)&&!aprovadaEm[o.id]).sort((a,b)=>a.numero-b.numero);
+  const sem=ativas.filter(o=>o.numero==null&&daMedR(o)&&!aprovadaEm[o.id]).sort((a,b)=>refOS(a).localeCompare(refOS(b),"pt-BR",{numeric:true}));
+  const aguard=ativas.filter(o=>o.numero==null), vinc=edu.filter(o=>o.par_sugerido);
+  const prontas=and.filter(completa), completar=and.filter(o=>!completa(o));
+  const sets={and:new Set(and.map(o=>o.id)),pronta:new Set(prontas.map(o=>o.id)),completar:new Set(completar.map(o=>o.id)),sem:new Set(sem.map(o=>o.id)),aguard:new Set(aguard.map(o=>o.id)),vinc:new Set(vinc.map(o=>o.id)),barrada:new Set(barradas.map(o=>o.id))};
+  const todas=edu.slice().sort((a,b)=>(a.numero==null)-(b.numero==null)||(a.numero??0)-(b.numero??0)||refOS(a).localeCompare(refOS(b),"pt-BR",{numeric:true}));
+  S.os=todas.map(o=>{
+    const [mat,qt,valid]=materialAuto(o), ab=Object.keys(sets).filter(k=>sets[k].has(o.id));
+    const r={id:o.id,os:refOS(o),un:o.unidade||"",fi:o.fiscal||"",cl:o.classificacao||"",en:br(o.entrada),co:br(o.conclusao),ex:o.executor||"",st:o.status||"",me:o.medicao||"",
+      so:o.solicitado||"",se:o.servico||"",ma:o.materiais||"",al:mat,qi:qt,mc:o.memoria_calculo||"",as:o.assinado?"SIM":"",va:valid,ft:fotos(o),ab};
+    if(ab.includes("and")||ab.includes("sem")) [r.ti,r.cs]=tipoEmop(o);
+    if(ab.includes("completar")||ab.includes("sem")){ r.fa=falta(o); if(ab.includes("sem")) r.si=completa(o)?"PRONTA":"falta: "+falta(o); }
+    if(o.par_sugerido) r.pr=String(o.par_sugerido); if(o.fict_ref) r.fr=o.fict_ref;
+    if(aprovadaEm[o.id]) r.ja=aprovadaEm[o.id];
+    return r;
+  });
+  // conferência (mesmos itens da aba CONFERÊNCIA da Mestra)
+  const usosFoto={}; edu.forEach(o=>new Set(fotos(o)).forEach(u=>usosFoto[u]=(usosFoto[u]||0)+1));
+  const numCnt={}; edu.forEach(o=>{if(o.numero!=null)numCnt[o.numero]=(numCnt[o.numero]||0)+1});
+  const problemas=[]; const p=(aba,o,prob,acao)=>problemas.push([aba,refOS(o),o.unidade||"",o.executor||"",prob,acao]);
+  for(const [aba,lista] of [[`${MED} EM ANDAMENTO`,and],[`${MED} SEM Nº`,sem]]) for(const o of lista){
+    const fs=fotos(o);
+    if(!temConteudo(o.memoria_calculo)) p(aba,o,"SEM MEMORIA DE CALCULO (vazia ou só o modelo do app)","executor/engenheiro preencher a memoria no app");
+    if(!fs.length) p(aba,o,"SEM FOTO no app","anexar fotos (ou resgatar do grupo do WhatsApp)"); else if(fs.length<3) p(aba,o,`SO ${fs.length} FOTO(S) (minimo antes/durante/depois = 3)`,"completar fotos");
+    if(!String(o.executor||"").trim()) p(aba,o,"SEM EXECUTOR","preencher quem executou");
+    if(o.numero!=null&&numCnt[o.numero]>1) p(aba,o,`NUMERO DUPLICADO no sistema (${numCnt[o.numero]}x)`,"gestao: excluir a copia errada");
+    const m=String(o.medicao||"").trim(); if(m&&m!==MED) p(aba,o,`JA MARCADA EM ${m} e concluida no periodo`,"confirmar que NAO foi medida antes (risco de medir 2x)");
+    if(fs.some(u=>usosFoto[u]>1)) p(aba,o,"FOTO REPETIDA em outra O.S.","conferir se nao e a mesma foto usada em 2 servicos");
+    const v=materialAuto(o)[2]; if(v) p(aba,o,v.replace("CONFERIR: ","MATERIAL SAIU PARA OUTRA ESCOLA: "),"conferir unidade da O.S. x saida do almoxarifado");
+    if(!FEITO.has(o.status)) p(aba,o,`MARCADA ${MED} MAS STATUS ${o.status}`,"nao medir ate concluir");
+    if(o.status==="Assinatura"||o.status==="Avaliando") p(aba,o,`STATUS ${o.status} (ainda nao Concluido)`,"fechar a assinatura/avaliacao antes de medir");
+  }
+  barradas.forEach(o=>p("FORA DA MEDIÇÃO",o,`JÁ APROVADA em ${aprovadaEm[o.id].join(" + ")} (tabela de medição) - retirada da ${MED}`,"não medir de novo; se for serviço novo, abrir outra O.S."));
+  const emit=ativas.filter(o=>o.numero!=null&&o.entrada&&iso(o.entrada)>=INI&&iso(o.entrada)<=FIM&&!daMedR(o)).sort((a,b)=>a.numero-b.numero);
+  const execSem=ativas.filter(o=>o.numero==null&&o.status==="Executando"&&((o.entrada&&iso(o.entrada)>=INI&&iso(o.entrada)<=FIM)||iso(o.criado_em)>=INI)).sort((a,b)=>refOS(a).localeCompare(refOS(b)));
+  const medFutura={}; edu.forEach(o=>{const m=String(o.medicao||"").match(/MED (\d+)/); if(m&&Number(m[1])>M.numero) medFutura[o.medicao]=(medFutura[o.medicao]||0)+1});
+  const linOS=(o,quem)=>[o.status||"",refOS(o),o.unidade||"",o[quem]||"",String(o.solicitado||"").slice(0,160)];
+  S.d={ meta:{med:MED, ini:br(M.inicio), fim:br(M.fim)}, problemas, med_futura:medFutura,
+    emitidas_sem_baixa:emit.map(o=>linOS(o,"fiscal")), executando_sem_numero:execSem.map(o=>linOS(o,"executor")),
+    resumo:[["O.S. da Educação no sistema (sem excluídas)",edu.length],["O.S. da Saúde deixadas de fora (documento vai p/ SEMEDE)",nSaude],
+      [`${MED} EM ANDAMENTO (com nº oficial)`,and.length],["   ... concluídas",and.filter(o=>o.status==="Concluído").length],
+      ["   ... em assinatura/avaliação",and.filter(o=>o.status==="Assinatura"||o.status==="Avaliando").length],
+      ["   ... PRONTAS P/ APRESENTAR (nº + memória + 3 fotos + executor)",prontas.length],["   ... COMPLETAR ANTES (risco de glosa)",completar.length],
+      [`${MED} SEM Nº (fictícias feitas, sem nº oficial)`,sem.length],["   ... PRONTAS (memória + 3 fotos + executor)",sem.filter(completa).length],
+      ["Fictícias aguardando nº (todas)",aguard.length],["Fictícias já vinculadas a nº oficial",vinc.length],
+      ["Retiradas por JÁ TEREM SIDO APROVADAS antes (trava anti-medição dupla)",barradas.length],["Itens de CONFERÊNCIA abertos (lista abaixo)",problemas.length],
+      [`O.S. emitidas no período ainda sem baixa (fora da ${MED})`,emit.length],["Serviços 'Executando' SEM número (vincular ao nº da O.S.)",execSem.length]] };
+  S.byId={}; S.byRef={}; S.idx={};
+  S.os.forEach(o=>{S.byId[o.id]=o; if(!(o.os in S.byRef))S.byRef[o.os]=o; if(o.fr&&!(o.fr in S.byRef))S.byRef[o.fr]=o;
+    S.idx[o.id]=norm([o.os,o.fr,o.pr,o.un,o.fi,o.ex,o.st,o.me,o.so,o.se,o.ma,o.al,o.mc,o.va,o.ti,o.cs].join(" "))});
+  S.med=S.os.filter(daMed);
+}
+/* lançamentos do banco -> decisões da tela; estilos aprendidos = o que já foi lançado para cada tipo de serviço */
+function montaDecisoes(){
+  S.dec={}; const porMos={};
+  S.lanc.forEach(l=>(porMos[l.medicao_os_id]=porMos[l.medicao_os_id]||[]).push(l));
+  S.mos.filter(x=>x.medicao_id===S.M.id).forEach(x=>{
+    const o=S.byId[x.os_id]; if(!o) return;
+    const itens=(porMos[x.id]||[]).map(l=>{const b=S.byItemId[l.contrato_item_id]||{};return {cod:b.cod||"?",item:b.item||"",unid:b.unid||"",preco:Number(l.preco_unitario),expressao:l.conta,qtd:Number(l.quantidade),id:l.id}});
+    S.dec[o.id]={mos:x.id, status:x.situacao==="lancada"?"aprovada":x.situacao==="pulada"?"pulada":"pendente", itens,
+      fotos_rdo:(x.fotos_relatorio||[]).map(u=>o.ft.indexOf(u)).filter(i=>i>=0), fotos_rdo_url:x.fotos_relatorio||[], legenda:x.legenda_relatorio||"",
+      por:x.lancado_por||"", em:x.lancado_em||x.atualizado_em, resultado:x.resultado_fiscal||""};
+  });
+  const tipoDaOS={}; S.os.forEach(o=>{ if(o.ti) tipoDaOS[o.id]=o.ti; });
+  const cont={}; S.mos.forEach(x=>{const t=tipoDaOS[x.os_id]; if(!t||x.situacao!=="lancada") return; (porMos[x.id]||[]).forEach(l=>{const b=S.byItemId[l.contrato_item_id]; if(!b) return; const k=slug(t); cont[k]=cont[k]||{tipo:t,c:{}}; cont[k].c[b.cod]=(cont[k].c[b.cod]||0)+1;})});
+  S.estilos={}; Object.entries(cont).forEach(([k,v])=>{S.estilos[k]={tipo:v.tipo,cods:Object.entries(v.c).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]),usos:Object.values(v.c).reduce((a,b)=>a+b,0)}});
+}
+
+/* ================= chaves da tela ================= */
+const M = () => S.d.meta;
+const medTag = () => M().med.replace(/\s+/g,"");
+const medNum = () => M().med.replace(/\D+/g,"");
+const daMed = o => o.ab.includes("and")||o.ab.includes("sem");
+const semNum = o => o.ab.includes("sem");
+const pronta = o => o.ab.includes("pronta") || (semNum(o) && o.si==="PRONTA");
+const decDe = o => S.dec[o.id]||null;
+const statusDe = o => { const d=decDe(o); return d?d.status:"pendente"; };
+const valorDec = d => (d&&d.itens||[]).reduce((a,i)=>a+(i.qtd||0)*(i.preco||0),0);
+const faltaDe = o => { const f=(o.fa||"").split(/,\s*(?![^()]*\))/).map(s=>s.trim()).filter(Boolean); if(semNum(o)) f.unshift("nº oficial"); return f; };
+const medFechada = () => S.M.situacao==="fechada";
+
+/* ================= fita de cálculo ================= */
+function evalExpr(str){
+  if(str==null||String(str).trim()==="") return NaN;
+  let s=String(str).replace(/×/g,"x").replace(/÷/g,"/").replace(/,/g,".").replace(/[xX]/g,"*").replace(/[^0-9.+\-*\/()]/g,"");
+  let i=0;const eat=c=>{if(s[i]===c){i++;return true}return false};
+  function num(){let st=i;while(i<s.length&&/[0-9.]/.test(s[i]))i++;if(st===i)throw 0;return parseFloat(s.slice(st,i))}
+  function fac(){if(eat("(")){const v=add();if(!eat(")"))throw 0;return v}if(eat("-"))return -fac();return num()}
+  function mul(){let v=fac();for(;;){if(eat("*"))v*=fac();else if(eat("/"))v/=fac();else return v}}
+  function add(){let v=mul();for(;;){if(eat("+"))v+=mul();else if(eat("-"))v-=mul();else return v}}
+  try{const v=add();return i===s.length&&isFinite(v)?v:NaN}catch(e){return NaN}
+}
+function exprDaMemoria(o){ const c=String(o.mc||"").trim(); if(c&&/^[\s\d.,xX×*+\-()\/=]+$/.test(c)){const e=c.replace(/=.*$/,"").trim(); if(!isNaN(evalExpr(e))) return e;} return ""; }
+
+/* ================= o motor (sugestão = azul) ================= */
+const STOP=new Set(["de","da","do","das","dos","e","em","no","na","nos","nas","com","para","por","a","o","as","os","um","uma","que","ate","apos"]);
+const toks = t => norm(t).split(/[^a-z0-9]+/).filter(w=>w.length>2&&!STOP.has(w));
+const slug = t => norm(t).replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"geral";
+function codsDaSugestao(s){ const out=[]; let pre=""; for(const m of String(s||"").matchAll(/(\d{2}\.\d{3})(?:\.(\d{4}))?|\/(\d{4})\b/g)){ if(m[1]){pre=m[1];out.push(m[2]?pre+"."+m[2]:pre)} else if(m[3]&&pre) out.push(pre+"."+m[3]); } return out; }
+function propostas(o){
+  const codsSug=codsDaSugestao(o.cs), estilo=S.estilos[slug(o.ti)]||null, tx=new Set(toks((o.se||"")+" "+(o.so||"")+" "+(o.ti||"")));
+  const cands=S.base.map(b=>{let sc=0; for(const w of toks(b.desc)) if(tx.has(w)) sc+=1.2; if(codsSug.some(c=>b.cod.startsWith(c))) sc+=6;
+    if(estilo&&estilo.cods.includes(b.cod)) sc+=9; const j=S.jur[b.cod]; if(j&&sc>0) sc+=Math.log(1+j.n)*0.4; return {b,sc};})
+    .filter(x=>x.sc>=2).sort((a,b)=>b.sc-a.sc).slice(0,4);
+  return {cands, estilo};
+}
+function buscaItens(q){ const nq=norm(q); if(nq.length<2) return []; const ws=toks(q);
+  return S.base.map(b=>{let sc=0;const nd=norm(b.desc);if(norm(b.cod).startsWith(nq))sc+=100;if(nd.includes(nq))sc+=10;for(const w of ws)if(nd.includes(w))sc+=2;return {b,sc}})
+    .filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc||((S.jur[b.b.cod]||{}).n||0)-((S.jur[a.b.cod]||{}).n||0)).slice(0,8); }
+const codTxt = b => b.cod+(b.item?` · item ${b.item}`:"");
+
+/* ================= topo e abas ================= */
+function topo(){
+  $("#brandsub").textContent=`FP Vieira Engenharia · ${CONTRATO_NOME} FP.094 · ${S.M.rotulo} (${br(S.M.inicio).slice(0,5)} a ${br(S.M.fim).slice(0,5)})`;
+  $("#topr").innerHTML=`<span class="carimbo">${esc(S.email)} · lido ${esc(S.carregadoEm)}</span>
+    <select id="selmed" aria-label="Medição">${S.medicoes.map(m=>`<option value="${m.id}" ${m.id===S.M.id?"selected":""}>${esc(m.rotulo)} · ${esc(m.situacao)}</option>`).join("")}</select>
+    <button class="btnt" id="batual" title="Ler o banco de novo">↻ Atualizar</button><button class="btn pri" id="acao" disabled>Baixar</button><button class="btnt" id="bsair">Sair</button>`;
+  $("#selmed").addEventListener("change",async e=>{S.M=S.medicoes.find(m=>m.id===Number(e.target.value)); sessionStorageSet("medicao",S.M.id); await carregar();});
+  $("#batual").addEventListener("click",async()=>{await carregar(); toast("Dados lidos do banco agora.");});
+  $("#bsair").addEventListener("click",sair);
+  $("#acao").addEventListener("click",acaoTopo);
+}
+const SHEETS=[
+  {k:"conferencia",t:"Conferência"},{k:"medicao",t:"Medição {MED}",main:1},{k:"memoria",t:"Memória de cálculo",main:1},{k:"relatorio",t:"Relatório fotográfico",main:1},
+  {k:"todas",t:"O.S 2026",f:()=>true,tit:"PLANILHA MESTRA FP.094 — TODAS AS O.S. (espelho do sistema)"},
+  {k:"aguardando",t:"Aguardando nº",f:o=>o.ab.includes("aguard"),tit:"FICTÍCIAS (L-M-G-C-F-Q…) aguardando número oficial do fiscal"},
+  {k:"vinculadas",t:"Vinculadas"},{k:"estilos",t:"Estilos aprendidos"},
+];
+const subst = t => String(t||"").replace(/\{MED\}/g,M().med);
+const sheet = k => SHEETS.find(s=>s.k===k)||SHEETS[1];
+function contagem(sh){
+  if(sh.k==="medicao") return S.med.length; if(sh.k==="memoria") return lancadas().length; if(sh.k==="relatorio") return listaRelatorio().length;
+  if(sh.f) return S.os.filter(sh.f).length; if(sh.k==="vinculadas") return S.os.filter(o=>o.ab.includes("vinc")).length; if(sh.k==="estilos") return Object.keys(S.estilos).length; return null;
+}
+function drawSheets(){ $("#sheets").innerHTML=SHEETS.map(sh=>{const n=contagem(sh);return `<a href="#${sh.k}" class="${S.view===sh.k?"on":""} ${sh.main?"main":""}" ${S.view===sh.k?'aria-current="page"':""}>${esc(subst(sh.t))}${n!=null?`<span class="n">${n}</span>`:""}</a>`}).join(""); const on=$("#sheets a.on"); if(on) on.scrollIntoView({block:"nearest",inline:"nearest"}); }
+function rota(){ const h=(location.hash||"").replace("#",""); S.view=SHEETS.some(s=>s.k===h)?h:"medicao"; draw(); }
+window.addEventListener("hashchange",()=>{ if(S.d){rota();window.scrollTo(0,0)} });
+function draw(){
+  if(!S.d) return;
+  drawSheets(); const m=$("#app"), k=S.view;
+  if(k==="conferencia") vConf(m); else if(k==="medicao") vMedicao(m); else if(k==="memoria") vMemoria(m); else if(k==="relatorio") vRelatorio(m);
+  else if(k==="vinculadas") vVinc(m); else if(k==="estilos") vEstilos(m); else vTabela(m,sheet(k));
+  const a=$("#acao"); if(!a) return;
+  a.textContent=k==="relatorio"?(S.gerando?"Gerando o PDF…":"Gerar relatório fotográfico (PDF)"):k==="memoria"?"Baixar memória de cálculo (Excel)":"Baixar esta aba (Excel)";
+  a.disabled=S.gerando||k==="estilos";
+}
+function tagStatus(st){ const c=st==="Concluído"?"t-ok":st==="Executando"?"t-ex":st==="Pendente"?"t-pe":st==="Cancelada"?"t-cz":st?"t-ex":"t-cz"; return st?`<span class="tag ${c}">${esc(st)}</span>`:""; }
+const fonteHTML = () => `<p class="fonte">Direto do banco (lido em <b>${esc(S.carregadoEm)}</b> — "↻ Atualizar" lê de novo), com as regras da Planilha Mestra. Não edite a O.S. aqui: corrija no app. O que é palpite do motor aparece em <b>azul</b>; vale o que o medidor lança.</p>`;
+const avisoFechada = () => medFechada()?`<div class="notice">A ${esc(S.M.rotulo)} está <b>fechada</b>: só consulta, nada pode ser lançado ou mudado.</div>`:"";
+
+/* ================= MEDIÇÃO ================= */
+const FILTROS=[["alancar","A lançar",o=>statusDe(o)==="pendente"],["lancadas","Lançadas ✓",o=>statusDe(o)==="aprovada"],["prontas","Prontas p/ apresentar",o=>pronta(o)],
+  ["completar","Completar antes",o=>!pronta(o)],["sem","Sem nº oficial",o=>semNum(o)],["puladas","Puladas",o=>statusDe(o)==="pulada"],["todas","Todas",()=>true]];
+const MCOLS=[["os","OS"],["un","UNIDADE"],["co","CONCLUSÃO"],["ex","RESPONSÁVEL"],["se","SERVIÇO EXECUTADO"],["mc","MEMÓRIA DO CAMPO"],["_fotos","FOTOS"],["_falta","O QUE FALTA"],
+  ["ti","TIPO (sugestão)","sug"],["cs","CÓDIGO (sugestão)","sug"],["_lanc","CÓDIGO LANÇADO","lan"],["_valor","VALOR"]];
+function mval(o,k){
+  if(k==="_fotos") return o.ft.length; if(k==="_falta") return faltaDe(o).join(", ");
+  if(k==="_lanc"){const d=decDe(o);return d&&d.status==="aprovada"?d.itens.map(i=>i.cod).join(" + "):d&&d.status==="pulada"?"(pulada)":""}
+  if(k==="_valor"){const d=decDe(o);return d&&d.status==="aprovada"?valorDec(d):0} return o[k]??"";
+}
+function chaveSort(o,k,vf){ const v=(vf||mval)(o,k); if(k==="os"){const n=parseInt(v,10);return isNaN(n)?[1,String(v)]:[0,n]} if(k==="en"||k==="co"){const p=String(v).split("/");return [0,p.length===3?p[2]+p[1]+p[0]:""]} return typeof v==="number"?[0,v]:[0,norm(v)]; }
+function ordena(rows,chave,vf){ const so=S.sort[chave]; if(!so) return rows; return rows.slice().sort((a,b)=>{const x=chaveSort(a,so.k,vf),y=chaveSort(b,so.k,vf);return (x[0]-y[0]||(x[1]<y[1]?-1:x[1]>y[1]?1:0))*so.d}); }
+function vMedicao(m){
+  const med=M().med, total=S.med.length, lanc=S.med.filter(o=>statusDe(o)==="aprovada"), pul=S.med.filter(o=>statusDe(o)==="pulada");
+  const valor=lanc.reduce((a,o)=>a+valorDec(decDe(o)),0), filtro=FILTROS.find(f=>f[0]===S.filtro)||FILTROS[0], q=norm(S.busca.medicao||"");
+  let rows=ordena(S.med.filter(o=>filtro[2](o)&&(!q||S.idx[o.id].includes(q))),"medicao"); S.lista=rows.map(o=>o.id); const so=S.sort.medicao;
+  m.innerHTML=`<h1>Medição ${esc(String(S.M.numero))} — ${esc(M().ini.slice(0,5))} a ${esc(M().fim.slice(0,5))}</h1>
+  <p class="sub">A lista de trabalho do medidor: as O.S. que a Mestra põe na ${esc(med)} (em andamento + feitas sem nº). Clique numa O.S. para ver tudo, escolher as fotos do relatório e lançar o código EMOP com a conta — vira a memória de cálculo, gravada no banco.</p>
+  ${fonteHTML()}${avisoFechada()}
+  <div class="figs"><div class="fig"><b class="num">${total}</b><span>O.S. na medição</span></div>
+    <button class="fig ok" data-f="lancadas"><b class="num">${lanc.length}</b><span>lançadas ✓</span></button>
+    <button class="fig" data-f="alancar"><b class="num">${total-lanc.length-pul.length}</b><span>a lançar</span></button>
+    <button class="fig ok" data-f="prontas"><b class="num">${S.med.filter(pronta).length}</b><span>prontas p/ apresentar</span></button>
+    <button class="fig at" data-f="completar"><b class="num">${S.med.filter(o=>!pronta(o)).length}</b><span>completar antes (risco de glosa)</span></button>
+    <div class="fig"><b class="num" style="font-size:22px">${valor?brl(valor):"–"}</b><span>valor lançado até agora</span></div></div>
+  <div class="prog" title="${lanc.length} de ${total} lançadas"><i style="width:${total?Math.round(100*lanc.length/total):0}%"></i></div>
+  <div class="legenda"><span><i style="background:var(--greensoft)"></i>lançada (vai na medição)</span><span><i style="background:var(--yellowsoft)"></i>falta algo (risco de glosa)</span><span><i style="background:var(--bluesoft)"></i>sugestão do motor</span><span><i style="background:var(--lanc)"></i>código lançado pelo medidor</span></div>
+  <div class="bar"><input class="in" id="busca" type="search" placeholder="Buscar nº, escola, serviço, equipe, memória…" value="${esc(S.busca.medicao||"")}" aria-label="Buscar na medição"></div>
+  <div class="chips">${FILTROS.map(([k,t,f])=>`<button class="chip ${S.filtro===k?"on":""}" data-f="${k}">${esc(t)} (${S.med.filter(f).length})</button>`).join("")}</div>
+  <p class="hint num">${rows.length} O.S. neste filtro · clique no título da coluna para ordenar</p>
+  ${rows.length?`<div class="tw"><table class="grid"><thead><tr>${MCOLS.map(([k,t,c])=>`<th class="so ${c||""} ${k==="_valor"||k==="_fotos"?"n":""}" data-s="${k}" aria-sort="${so&&so.k===k?(so.d>0?"ascending":"descending"):"none"}">${esc(t)}${so&&so.k===k?(so.d>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>${rows.map(linhaMed).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma O.S. neste filtro.</div>'}`;
+  const b=$("#busca"); b.addEventListener("input",()=>{S.busca.medicao=b.value;clearTimeout(vMedicao._t);vMedicao._t=setTimeout(()=>{const p=b.selectionStart;draw();wireFocus("busca",p)},220)});
+  m.querySelectorAll("[data-f]").forEach(x=>x.addEventListener("click",()=>{S.filtro=x.dataset.f;draw()}));
+  m.querySelectorAll("th.so").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.s,c=S.sort.medicao;S.sort.medicao=c&&c.k===k?(c.d>0?{k,d:-1}:null):{k,d:1};draw()}));
+  ligaLinhas(m); S.atual={tipo:"medicao",rows};
+}
+function linhaMed(o){
+  const st=statusDe(o), d=decDe(o), fal=faltaDe(o);
+  return `<tr data-id="${o.id}" class="${st==="aprovada"?"lancada":st==="pulada"?"pulada":""}"><td><button class="lnk" data-id="${o.id}">${esc(o.os)}</button></td>
+    <td><div class="md">${esc(o.un)}</div></td><td class="num">${esc(o.co)}</td><td>${esc(o.ex)}</td><td><div class="lt">${esc(o.se||o.so)}</div></td>
+    <td>${String(o.mc||"").trim()?`<div class="lt">${esc(o.mc)}</div>`:'<span class="vazio">—</span>'}</td><td class="n ${o.ft.length<3?"falta":""}">${o.ft.length}</td>
+    <td class="${fal.length?"cfalta":""}"><div class="lt" style="min-width:150px">${esc(fal.join(" · "))}</div></td><td class="csug">${esc(o.ti)}</td><td class="csug"><div class="md">${esc(o.cs)}</div></td>
+    <td class="clan">${st==="aprovada"?d.itens.map(i=>`<div class="num">${esc(i.cod)} <span class="vazio">${esc(f2(i.qtd))} ${esc(i.unid)}</span></div>`).join(""):st==="pulada"?'<span class="vazio">pulada</span>':""}</td>
+    <td class="n">${st==="aprovada"?brl(valorDec(d)):""}</td></tr>`;
+}
+function ligaLinhas(m){ m.querySelectorAll("tbody tr[data-id]").forEach(tr=>tr.addEventListener("click",e=>{ if(e.target.closest("a"))return; abrirFicha(+tr.dataset.id,e.target.closest("button")||tr); })); }
+
+/* ================= FICHA ================= */
+function abrirFicha(id,deOnde){ S.voltaFoco=deOnde||document.activeElement; S.ficha={id,draft:null}; $("#ov").hidden=false; document.body.style.overflow="hidden"; $("#dw").scrollTop=0; renderFicha(); wireFocus("fechar"); }
+function fechar(){ $("#ov").hidden=true; document.body.style.overflow=""; S.ficha=null; draw(); const f=S.voltaFoco; if(f&&document.contains(f)) try{f.focus()}catch(e){} }
+$("#ov").addEventListener("click",e=>{ if(e.target.id==="ov") fechar(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#ov").hidden) fechar(); });
+const legendaPadrao = o => String(o.se||o.so||"").split(/\n/).map(s=>s.trim()).filter(Boolean).join(" ").slice(0,220);
+function rascunho(o){
+  const dec=decDe(o), p=propostas(o), pre=exprDaMemoria(o);
+  const itens=(dec&&dec.itens&&dec.itens.length)?dec.itens.map(i=>({cod:i.cod,expressao:i.expressao})):p.cands.filter((c,ix)=>ix===0||c.sc>=6).map((c,ix)=>({cod:c.b.cod,expressao:ix===0?pre:""}));
+  return {itens,cands:p.cands,estilo:p.estilo,fotos:new Set((dec&&dec.fotos_rdo)||[]),legenda:(dec&&dec.legenda)||legendaPadrao(o),addQ:""};
+}
+function renderFicha(focoId,pos){
+  if(!S.ficha) return;
+  const o=S.byId[S.ficha.id], dw=$("#dw"), topo_=dw.scrollTop, naMed=daMed(o), dec=decDe(o), st=statusDe(o);
+  if(naMed&&!S.ficha.draft) S.ficha.draft=rascunho(o);
+  const D=S.ficha.draft, ix=S.lista.indexOf(o.id), fal=faltaDe(o);
+  const campos=[["UNIDADE",o.un],["FISCAL",o.fi],["CLASSIF",o.cl],["ENTRADA",o.en],["CONCLUSÃO",o.co],["RESPONSÁVEL",o.ex],["STATUS",o.st],["MEDIÇÃO (etiqueta no app)",o.me],
+    ["O QUE O FISCAL SOLICITOU",o.so],["SERVIÇO EXECUTADO",o.se],["MATERIAL (MANUAL)",o.ma],["MATERIAL ALMOXARIFADO (AUTO)",o.al],["MEMÓRIA DE CÁLCULO (campo)",o.mc],["ASSINADA",o.as],["VALIDAÇÃO ESCOLA",o.va]];
+  if(o.fr) campos.push(["REFERÊNCIA FICTÍCIA",o.fr]); if(o.pr) campos.push(["VINCULADA À OFICIAL",o.pr]);
+  dw.innerHTML=`<div class="dwbar"><h2 id="dwt">O.S. ${esc(o.os)} · ${esc(o.un)}</h2>
+    ${naMed&&S.lista.length?`<button class="btn" id="ant" ${ix<=0?"disabled":""}>◀ Anterior</button><span class="hint num" style="margin:0">${ix>=0?ix+1:"–"} de ${S.lista.length}</span><button class="btn" id="prox" ${ix<0||ix>=S.lista.length-1?"disabled":""}>Próxima ▶</button>`:""}
+    <button class="btn" id="fechar">Fechar</button></div>
+  <div style="margin-top:10px">${tagStatus(o.st)} ${st==="aprovada"?'<span class="tag t-ok">✓ lançada na medição</span>':st==="pulada"?'<span class="tag t-cz">pulada</span>':naMed?'<span class="tag t-pe">a lançar</span>':'<span class="tag t-cz">fora da '+esc(M().med)+'</span>'} ${pronta(o)?'<span class="tag t-ok">pronta p/ apresentar</span>':""} ${semNum(o)?'<span class="tag t-ru">sem nº oficial</span>':""} ${o.ja?`<span class="tag t-ru">já aprovada em ${esc(o.ja.join(" + "))}</span>`:""}</div>
+  ${dec&&dec.por?`<p class="hint" style="margin-top:6px">Lançada por ${esc(dec.por)}${dec.em?" em "+esc(new Date(dec.em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})):""}${dec.resultado?` · fiscalização: <b>${esc(dec.resultado)}</b>`:""}</p>`:""}
+  ${fal.length&&naMed?`<div class="bloco falt"><b>O que falta (risco de glosa):</b> ${esc(fal.join(" · "))}<div class="hint" style="margin:4px 0 0">Corrija no app (memória, fotos, executor) — na MED 9/10 a fiscalização glosou tudo que veio sem isso.</div></div>`:""}
+  <dl>${campos.map(([t,v])=>`<dt>${esc(t)}</dt><dd>${String(v??"").trim()?esc(v):'<span class="vazio">— nada lançado no app</span>'}</dd>`).join("")}</dl>
+  <h3>Fotos (${o.ft.length})${naMed?" — marque as que vão no relatório fotográfico":""}</h3>
+  ${o.ft.length?`<div class="fotos">${o.ft.map((u,i)=>{const sel=D&&D.fotos.has(i);return `<label class="foto ${sel?"sel":""}">${naMed&&!medFechada()?`<input type="checkbox" data-fi="${i}" ${sel?"checked":""} aria-label="usar a foto ${i+1} no relatório">`:""}<img src="${esc(mini(u,320))}" alt="Foto ${i+1} da O.S. ${esc(o.os)}" loading="lazy"><span class="k">${i+1}</span><a href="${esc(u)}" target="_blank" rel="noopener">abrir</a></label>`}).join("")}</div>
+    ${naMed?`<p class="hint">${D.fotos.size?`${D.fotos.size} escolhida${D.fotos.size===1?"":"s"} para o relatório.`:`Nenhuma escolhida: o relatório usa as ${Math.min(6,o.ft.length)} primeiras.`}</p>`:""}`:'<p class="falta">Nenhuma foto no app.</p>'}
+  ${naMed?(medFechada()?avisoFechada():fichaMotor(o,D,dec)):`<div class="notice">Esta O.S. não está na ${esc(M().med)} pelas regras da Mestra (etiqueta ou conclusão no período)${o.ja?`; já foi aprovada em ${esc(o.ja.join(" + "))}`:""}.</div>`}`;
+  wireFicha(o); dw.scrollTop=topo_; if(focoId) wireFocus(focoId,pos);
+}
+function fichaMotor(o,D,dec){
+  const emD=cod=>D.itens.some(i=>i.cod===cod);
+  return `<div class="bloco"><h3 style="margin-top:0">Lançamento na medição</h3>
+    <label class="hint" for="legenda" style="display:block;margin:0 0 4px">Legenda da O.S. no relatório fotográfico</label><input class="in" id="legenda" style="width:100%" value="${esc(D.legenda)}">
+    ${D.estilo?`<p class="hint" style="color:var(--green);margin-top:8px"><b>Aprendido dos lançamentos:</b> ${esc(o.ti)} costuma ser lançado em ${esc(D.estilo.cods.join(", "))}</p>`:""}
+    <h3>O motor sugere <span class="hint" style="font-family:var(--body);font-weight:400">(azul = palpite; marque o que se aplica)</span></h3>
+    <div class="cands">${D.cands.map(c=>{const j=S.jur[c.b.cod];return `<label class="cand ${emD(c.b.cod)?"sel":""}"><input type="checkbox" data-cod="${esc(c.b.cod)}" ${emD(c.b.cod)?"checked":""}>
+      <div><div class="cd num">${esc(codTxt(c.b))} · ${esc(c.b.unid)} · ${brl(c.b.preco)}</div><div class="ds">${esc(c.b.desc.slice(0,160))}${c.b.desc.length>160?"…":""}</div>
+      ${j?`<div class="uso">histórico: ${j.n} contas aceitas em ${j.nos} O.S. · ex.: ${esc(String(j.ex1||"").slice(0,90))}</div>`:'<div class="uso">sem histórico — item novo para o motor</div>'}</div></label>`}).join("")||'<p class="hint">O motor não achou candidato com confiança. Use a busca abaixo.</p>'}</div>
+    <input class="in" id="addcod" style="width:100%" placeholder="Adicionar outro item: digite o código ou uma palavra (ex.: torneira)" value="${esc(D.addQ)}">
+    ${D.addQ.trim().length>=2?`<div class="addlist">${buscaItens(D.addQ).map(r=>{const j=S.jur[r.b.cod];return `<button type="button" class="additem" data-cod="${esc(r.b.cod)}"><span class="cd num">${esc(codTxt(r.b))} · ${esc(r.b.unid)} · ${brl(r.b.preco)}</span><span class="ds">${esc(r.b.desc.slice(0,120))}${r.b.desc.length>120?"…":""}${j?` · histórico: ${j.n} contas`:""}</span></button>`}).join("")||'<p class="hint">Nada na base do contrato com esse texto.</p>'}</div>`:""}
+    ${D.itens.map((it,ix)=>{const b=S.byCod[it.cod]||{};const q=evalExpr(it.expressao);
+      return `<div class="itemedit"><div class="tt"><span class="cd num">${esc(b.cod?codTxt(b):it.cod)}</span><span class="hint" style="margin:0">${esc(b.unid||"?")} · ${brl(b.preco)}</span></div>
+        <div class="ds">${esc((b.desc||"item fora da base do contrato").slice(0,170))}</div>
+        <div class="tape"><input id="ex-${ix}" data-ix="${ix}" placeholder="a conta: 4,20 x 2,80 - 0,80 x 2,10 (ou só a quantidade)" value="${esc(it.expressao)}" aria-label="conta do item ${esc(it.cod)}">
+        <span class="res num ${isNaN(q)&&it.expressao?"bad":""}">${it.expressao?(isNaN(q)?"conta incompleta":f2(q)+" "+esc(b.unid||"")):"–"}</span></div>
+        <div class="acts" style="margin-top:6px">${String(o.mc||"").trim()?`<button class="btn" data-mem="${ix}">⤵ usar a memória do campo</button>`:""}<button class="btn ghost" data-rem="${ix}">tirar este item</button>${!isNaN(q)&&b.preco?`<span class="hint num" style="margin:0">= ${brl(q*b.preco)}</span>`:""}</div></div>`}).join("")}
+    <div class="acts"><button class="btn ok" id="aprovar" ${S.salvando?"disabled":""}>${S.salvando?"Gravando…":"✓ Lançar na medição e ir para a próxima"}</button>
+      <button class="btn" id="pular" ${S.salvando?"disabled":""}>Pular por enquanto</button>${dec?`<button class="btn ghost" id="desfazer" ${S.salvando?"disabled":""}>Desfazer lançamento</button>`:""}</div></div>`;
+}
+function wireFicha(o){
+  $("#fechar").addEventListener("click",fechar);
+  const ant=$("#ant"),prox=$("#prox"); if(ant) ant.addEventListener("click",()=>vaiPara(-1)); if(prox) prox.addEventListener("click",()=>vaiPara(1));
+  const D=S.ficha.draft; if(!D||medFechada()) return;
+  document.querySelectorAll("#dw .foto input").forEach(cb=>cb.addEventListener("change",()=>{const i=+cb.dataset.fi;if(cb.checked)D.fotos.add(i);else D.fotos.delete(i);renderFicha()}));
+  const lg=$("#legenda"); if(lg) lg.addEventListener("input",()=>{D.legenda=lg.value});
+  document.querySelectorAll("#dw .cand input").forEach(cb=>cb.addEventListener("change",()=>{const cod=cb.dataset.cod;if(cb.checked){if(!D.itens.some(i=>i.cod===cod))D.itens.push({cod,expressao:""})}else D.itens=D.itens.filter(i=>i.cod!==cod);renderFicha()}));
+  document.querySelectorAll("#dw .tape input").forEach(inp=>inp.addEventListener("input",()=>{D.itens[+inp.dataset.ix].expressao=inp.value;clearTimeout(wireFicha._t);wireFicha._t=setTimeout(()=>renderFicha(inp.id,inp.selectionStart),350)}));
+  document.querySelectorAll("#dw [data-mem]").forEach(bt=>bt.addEventListener("click",()=>{const i=+bt.dataset.mem;D.itens[i].expressao=String(o.mc||"").trim();renderFicha("ex-"+i)}));
+  document.querySelectorAll("#dw [data-rem]").forEach(bt=>bt.addEventListener("click",()=>{D.itens.splice(+bt.dataset.rem,1);renderFicha()}));
+  const add=$("#addcod"); if(add) add.addEventListener("input",()=>{D.addQ=add.value;clearTimeout(wireFicha._q);wireFicha._q=setTimeout(()=>renderFicha("addcod",add.selectionStart),250)});
+  document.querySelectorAll("#dw .additem").forEach(bt=>bt.addEventListener("click",()=>{const cod=bt.dataset.cod;if(!D.itens.some(i=>i.cod===cod))D.itens.push({cod,expressao:""});D.addQ="";toast("Item "+cod+" adicionado — preencha a conta.");renderFicha("ex-"+(D.itens.length-1))}));
+  const ap=$("#aprovar"),pu=$("#pular"),df=$("#desfazer");
+  if(ap) ap.addEventListener("click",()=>decidir(o,"aprovada")); if(pu) pu.addEventListener("click",()=>decidir(o,"pulada")); if(df) df.addEventListener("click",()=>desfazer(o));
+}
+function vaiPara(passo){ const ix=S.lista.indexOf(S.ficha.id), nx=S.lista[ix+passo]; if(nx==null){toast(passo>0?"Esta é a última O.S. da lista.":"Esta é a primeira O.S. da lista.");return} S.ficha={id:nx,draft:null}; $("#dw").scrollTop=0; renderFicha(); wireFocus(passo>0?"prox":"ant"); }
+
+/* ================= GRAVAÇÃO NO BANCO ================= */
+async function relerDecisoes(){
+  const [mos,lanc]=await Promise.all([todas("medicao_os","*"),todas("medicao_lancamento","*")]);
+  S.mos=mos; S.lanc=lanc; montaDecisoes();
+}
+async function decidir(o,status){
+  if(S.salvando) return;
+  const D=S.ficha.draft; let itens=[];
+  if(status==="aprovada"){
+    itens=D.itens.filter(i=>i.cod&&!isNaN(evalExpr(i.expressao))&&evalExpr(i.expressao)>0);
+    if(!itens.length){toast("Preencha a conta de pelo menos um item antes de lançar.");return}
+    const fora=itens.find(i=>!S.byCod[i.cod]); if(fora){toast(`O item ${fora.cod} não está no contrato.`);return}
+  }
+  const fr=[...D.fotos].sort((a,b)=>a-b).map(i=>o.ft[i]).filter(Boolean);
+  S.salvando=true; renderFicha();
+  try{
+    const {data:row,error}=await sb.from("medicao_os").upsert({medicao_id:S.M.id,os_id:o.id,situacao:status==="aprovada"?"lancada":"pulada",
+      fotos_relatorio:fr,legenda_relatorio:(D.legenda||"").trim()||null,lancado_por:S.email,lancado_em:new Date().toISOString()},{onConflict:"medicao_id,os_id"}).select().single();
+    if(error) throw error;
+    const {error:e2}=await sb.from("medicao_lancamento").delete().eq("medicao_os_id",row.id); if(e2) throw e2;
+    if(itens.length){
+      const {error:e3}=await sb.from("medicao_lancamento").insert(itens.map(i=>({medicao_os_id:row.id,contrato_item_id:S.byCod[i.cod].id,conta:String(i.expressao).trim(),quantidade:Math.round(evalExpr(i.expressao)*1e4)/1e4,lancado_por:S.email})));
+      if(e3) throw e3;
+    }
+    await relerDecisoes();
+    const d=decDe(o); toast(status==="aprovada"?`✓ O.S. ${o.os} lançada e gravada no banco (${brl(valorDec(d))}).`:`O.S. ${o.os} marcada como pulada.`);
+    S.salvando=false;
+    const ix=S.lista.indexOf(o.id), nx=S.lista[ix+1];
+    if(nx!=null){S.ficha={id:nx,draft:null};$("#dw").scrollTop=0;renderFicha();wireFocus("prox")} else {S.ficha.draft=null;renderFicha();toast("Fim da lista deste filtro.")}
+  }catch(e){ S.salvando=false; renderFicha(); toast("NÃO gravou: "+(e.message||e)); }
+}
+async function desfazer(o){
+  const d=decDe(o); if(!d||S.salvando) return;
+  S.salvando=true; renderFicha();
+  try{ const {error}=await sb.from("medicao_os").delete().eq("id",d.mos); if(error) throw error; await relerDecisoes(); S.ficha.draft=null; toast("Lançamento desfeito (apagado do banco)."); }
+  catch(e){ toast("Não deu para desfazer: "+(e.message||e)); }
+  S.salvando=false; renderFicha();
+}
+
+/* ================= MEMÓRIA DE CÁLCULO ================= */
+function lancadas(){ return S.med.map(o=>[o,decDe(o)]).filter(([o,d])=>d&&d.status==="aprovada"); }
+function memoria(){
+  const porItem=new Map();
+  for(const [o,d] of lancadas()) for(const it of d.itens){ let r=porItem.get(it.cod);
+    if(!r){const b=S.byCod[it.cod]||{};r={cod:it.cod,item:it.item||b.item||"",desc:b.desc||"",unid:it.unid||b.unid||"",preco:it.preco||b.preco||0,linhas:[],qtd:0};porItem.set(it.cod,r)}
+    r.linhas.push({escola:o.un,os:o.os,expressao:it.expressao,qtd:it.qtd}); r.qtd+=it.qtd; }
+  const its=[...porItem.values()].sort((a,b)=>(S.ordem[a.cod]??9e9)-(S.ordem[b.cod]??9e9)||a.cod.localeCompare(b.cod));
+  its.forEach(r=>r.linhas.sort((a,b)=>String(a.escola).localeCompare(String(b.escola),"pt-BR")||String(a.os).localeCompare(String(b.os),"pt-BR",{numeric:true})));
+  return its;
+}
+function vMemoria(m){
+  const its=memoria(), total=its.reduce((a,r)=>a+r.qtd*r.preco,0), nos=lancadas().length;
+  m.innerHTML=`<h1>Memória de cálculo — ${esc(M().med)}</h1>
+  <p class="sub">Montada com as O.S. lançadas (gravadas no banco), item por item na ordem da planilha do contrato, com escola, O.S. e a conta — o mesmo desenho da aba MEMÓRIA CÁLCULO da medição oficial.</p>${fonteHTML()}
+  <div class="figs"><div class="fig"><b class="num">${nos}</b><span>O.S. lançadas</span></div><div class="fig"><b class="num">${its.length}</b><span>itens EMOP</span></div>
+    <div class="fig"><b class="num">${its.reduce((a,r)=>a+r.linhas.length,0)}</b><span>linhas de memória</span></div><div class="fig ok"><b class="num" style="font-size:22px">${total?brl(total):"–"}</b><span>valor proposto do período</span></div></div>
+  ${its.length?`<section class="panel"><h2>Resumo por item</h2><div class="tw" style="max-height:none"><table><thead><tr><th>ITEM</th><th>CÓDIGO EMOP</th><th>DESCRIÇÃO</th><th>UN.</th><th class="n">QTD NO PERÍODO</th><th class="n">PREÇO C/ BDI</th><th class="n">VALOR</th></tr></thead><tbody>
+    ${its.map(r=>`<tr><td>${esc(r.item)}</td><td class="num">${esc(r.cod)}</td><td><div class="lt" style="max-width:520px">${esc(r.desc)}</div></td><td>${esc(r.unid)}</td><td class="n">${f2(r.qtd)}</td><td class="n">${brl(r.preco)}</td><td class="n">${brl(r.qtd*r.preco)}</td></tr>`).join("")}
+    <tr><td colspan="6"><b>TOTAL PROPOSTO</b></td><td class="n"><b>${brl(total)}</b></td></tr></tbody></table></div></section><h2>Memória por item</h2>
+  ${its.map(r=>`<div class="memblk"><div class="hd"><b>${esc(r.item)}</b><b class="num">${esc(r.cod)}</b><span class="hint" style="margin:0;flex:1;min-width:200px">${esc(r.desc.slice(0,200))}</span><span class="tag t-ex">${esc(r.unid)}</span></div>
+    <div class="tw" style="max-height:none;border:none;border-radius:0"><table><thead><tr><th>ESCOLA</th><th>O.S</th><th>CONTA</th><th class="n">TOTAL</th></tr></thead><tbody>
+    ${r.linhas.map(l=>`<tr><td>${esc(l.escola)}</td><td class="num">${esc(l.os)}</td><td class="num">${esc(l.expressao)}</td><td class="n">${f2(l.qtd)} ${esc(r.unid)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="tot num">TOTAL MEDIDO NO PERÍODO = ${f2(r.qtd)} ${esc(r.unid)} · ${brl(r.qtd*r.preco)}</div></div>`).join("")}`
+  :'<div class="empty">Nenhuma O.S. lançada ainda. Lance na aba <a href="#medicao">Medição</a> e a memória nasce aqui.</div>'}`;
+  S.atual={tipo:"memoria",its,total};
+}
+function fatores(expr){ const s=String(expr||"").replace(/,/g,".").replace(/×/g,"x").replace(/\*/g,"x").trim(); if(!/^\d+(\.\d+)?(\s*x\s*\d+(\.\d+)?){0,2}$/i.test(s)) return null; return s.split(/\s*x\s*/i).map(Number); }
+const hoje = () => new Date().toISOString().slice(0,10);
+function exportaMemoria(){
+  const {its,total}=S.atual, med=M().med, W=21, linha=()=>new Array(W).fill(null), put=(r,c,v)=>{r[c]=v;return r};
+  const aoa=[linha(),put(linha(),3,CONTRATO.objeto),linha(),linha(),put(linha(),3,`PERIODO: ${M().ini} À ${M().fim}`),linha()];
+  const t=linha(); t[3]="Memória   de   Cálculo -"; t[9]=med.replace("MED","MEDIÇÃO"); aoa.push(t,linha());
+  for(const r of its){ aoa.push(linha()); const h=linha(); h[1]=r.item; h[2]=r.cod; h[3]=r.desc; h[19]=r.unid; h[20]=Math.round(r.qtd*100)/100; aoa.push(h,linha());
+    const c=linha(); c[2]="ESCOLA"; c[3]="O.S"; c[5]="FATOR 1"; c[6]="X"; c[7]="FATOR 2"; c[8]="X"; c[9]="FATOR 3"; c[10]="="; c[11]="TOTAL"; aoa.push(c);
+    for(const l of r.linhas){ const x=linha(); x[2]=l.escola; x[3]=/^\d+$/.test(l.os)?Number(l.os):l.os; const f=fatores(l.expressao);
+      if(f){x[5]=f[0]; if(f.length>1){x[6]="X";x[7]=f[1]} if(f.length>2){x[8]="X";x[9]=f[2]}} else x[5]=l.expressao; x[10]="="; x[11]=l.qtd; aoa.push(x); }
+    const s=linha(); s[11]=Math.round(r.qtd*1e4)/1e4; s[12]=r.unid; aoa.push(s,linha()); const tt=linha(); tt[14]="TOTAL MEDIDO NO PERIODO = "; tt[15]=Math.round(r.qtd*1e4)/1e4; tt[16]=r.unid; aoa.push(tt); }
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(aoa); ws["!cols"]=[{wch:3},{wch:7},{wch:34},{wch:46},{wch:3},{wch:10},{wch:3},{wch:10},{wch:3},{wch:10},{wch:3},{wch:11},{wch:6}];
+  XLSX.utils.book_append_sheet(wb,ws,"MEMORIA CÁLCULO");
+  const res=[[`F. P. VIEIRA ENGENHARIA — ${CONTRATO.contrato.toUpperCase()} · SEMEDE RIO DAS OSTRAS`],[`${med} (${M().ini} a ${M().fim}) — PROPOSTA DO PAINEL DO MEDIDOR`],[],["ITEM","CÓDIGO EMOP","DESCRIÇÃO","UNID.","QTD NO PERÍODO","PREÇO C/ BDI","VALOR","Nº DE LINHAS"]];
+  its.forEach(r=>res.push([r.item,r.cod,r.desc,r.unid,Math.round(r.qtd*100)/100,r.preco,Math.round(r.qtd*r.preco*100)/100,r.linhas.length])); res.push([],["","","","","","TOTAL",Math.round(total*100)/100]);
+  const w2=XLSX.utils.aoa_to_sheet(res); w2["!cols"]=[{wch:7},{wch:15},{wch:70},{wch:6},{wch:14},{wch:12},{wch:14},{wch:10}]; XLSX.utils.book_append_sheet(wb,w2,"RESUMO");
+  XLSX.writeFile(wb,`MEMORIA DE CALCULO - ${medTag()} - EDUCACAO - ${hoje()}.xlsx`);
+}
+
+/* ================= RELATÓRIO FOTOGRÁFICO (PDF) ================= */
+function listaRelatorio(){ return S.med.filter(o=>o.ft.length&&(S.relTodas?statusDe(o)!=="pulada":statusDe(o)==="aprovada")); }
+function fotosDoRelatorio(o){ const d=decDe(o); const sel=d&&d.fotos_rdo&&d.fotos_rdo.length?d.fotos_rdo:[...Array(Math.min(6,o.ft.length)).keys()]; return sel.filter(i=>i<o.ft.length); }
+const legendaDe = o => { const d=decDe(o); return (d&&d.legenda)||legendaPadrao(o); };
+function vRelatorio(m){
+  const lista=listaRelatorio(), semFoto=S.med.filter(o=>!o.ft.length&&statusDe(o)==="aprovada"), nf=lista.reduce((a,o)=>a+fotosDoRelatorio(o).length,0);
+  m.innerHTML=`<h1>Relatório fotográfico — ${esc(M().med)}</h1>
+  <p class="sub">Cada O.S. vira um bloco com título, legenda e as fotos de 2 em 2 (tamanho VGA, como no modelo oficial). Vão as fotos marcadas na ficha; sem marcação, as 6 primeiras. As fotos vêm direto do banco na hora de gerar.</p>${fonteHTML()}
+  <div class="chips"><button class="chip ${S.relTodas?"":"on"}" data-r="0">Só as O.S. lançadas (${S.med.filter(o=>o.ft.length&&statusDe(o)==="aprovada").length})</button><button class="chip ${S.relTodas?"on":""}" data-r="1">Todas da medição com foto (${S.med.filter(o=>o.ft.length&&statusDe(o)!=="pulada").length})</button></div>
+  <div class="figs"><div class="fig"><b class="num">${lista.length}</b><span>O.S. no relatório</span></div><div class="fig"><b class="num">${nf}</b><span>fotos</span></div><div class="fig"><b class="num">${Math.max(1,Math.ceil(nf/6)+(lista.length?1:0))}</b><span>páginas (aprox.)</span></div></div>
+  ${semFoto.length?`<div class="notice">Lançadas SEM nenhuma foto no app (ficam fora do relatório): ${semFoto.map(o=>esc(o.os)).join(", ")}.</div>`:""}
+  ${lista.map(o=>{const fs=fotosDoRelatorio(o),d=decDe(o);return `<section class="relcard"><div class="hd"><button class="lnk ref" data-id="${o.id}">O.S. ${esc(o.os)}</button><b>${esc(o.un)}</b>${statusDe(o)==="aprovada"?'<span class="tag t-ok">lançada</span>':'<span class="tag t-pe">não lançada</span>'}<span class="hint" style="margin:0">${fs.length} foto${fs.length===1?"":"s"}${d&&d.fotos_rdo&&d.fotos_rdo.length?" escolhida"+(fs.length===1?"":"s"):" (as primeiras — escolha na ficha)"}</span></div>
+    <div class="sub" style="margin:0">${esc(legendaDe(o))}</div><div class="mini">${fs.map(i=>`<img src="${esc(mini(o.ft[i],160))}" alt="Foto ${i+1} da O.S. ${esc(o.os)}" loading="lazy">`).join("")}</div></section>`}).join("")||`<div class="empty">${S.relTodas?"Nenhuma O.S. da medição com foto.":"Nenhuma O.S. lançada com foto ainda. Lance na aba Medição — ou veja todas da medição no botão acima."}</div>`}`;
+  m.querySelectorAll("[data-r]").forEach(b=>b.addEventListener("click",()=>{S.relTodas=b.dataset.r==="1";draw()}));
+  m.querySelectorAll(".relcard .lnk").forEach(b=>b.addEventListener("click",()=>abrirFicha(+b.dataset.id,b)));
+  S.atual={tipo:"relatorio",lista};
+}
+const pdfTxt = s => String(s??"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/…/g,"...").replace(/[^\x00-\xFF]/g,"");
+async function fotoVGA(u){ // VGA pelo servidor -> dataURL + tamanho
+  try{ const r=await fetch(mini(u,640)); if(!r.ok) throw 0; const bl=await r.blob();
+    const src=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(bl)});
+    const dm=await new Promise(res=>{const i=new Image();i.onload=()=>res([i.naturalWidth,i.naturalHeight]);i.onerror=()=>res(null);i.src=src});
+    return dm?{src,dm}:null; }catch(e){ return null; }
+}
+async function geraRelatorio(){
+  const lista=S.atual.lista; if(!lista.length){toast("Não há O.S. no relatório.");return}
+  const {jsPDF}=window.jspdf, doc=new jsPDF({unit:"mm",format:"a4"}), Wp=210,Hp=297,mx=12,lw=Wp-2*mx,bw=90,bh=67.5,gap=lw-2*bw,base=Hp-14;
+  const medOrd=`${medNum()}ª`, periodo=`${M().ini} à ${M().fim}`; let y=14;
+  doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text(pdfTxt(CONTRATO.secretaria),Wp/2,y,{align:"center"}); y+=6;
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); const ob=doc.splitTextToSize(pdfTxt(CONTRATO.objeto),lw); doc.text(ob,Wp/2,y,{align:"center"}); y+=ob.length*3.8+2;
+  doc.text(pdfTxt(`${CONTRATO.contrato}  ·  Firma: ${CONTRATO.firma}`),Wp/2,y,{align:"center"}); y+=8;
+  doc.setFont("helvetica","bold"); doc.setFontSize(18); doc.text("RELATÓRIO FOTOGRÁFICO",Wp/2,y,{align:"center"}); y+=7;
+  doc.setFontSize(10); doc.text(pdfTxt(`Medição: ${medOrd}     Período: ${periodo}`),Wp/2,y,{align:"center"}); y+=4; doc.setDrawColor(150); doc.line(mx,y,Wp-mx,y); y+=6;
+  const novaPagina=()=>{doc.addPage(); y=12; doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(110); doc.text(pdfTxt(`RELATÓRIO FOTOGRÁFICO - MEDIÇÃO ${medOrd} (${periodo}) - ${CONTRATO.firma}`),mx,y); doc.setTextColor(0); y+=3; doc.setDrawColor(190); doc.line(mx,y,Wp-mx,y); y+=6;};
+  let falhas=0;
+  for(let n=0;n<lista.length;n++){
+    const o=lista[n], idx=fotosDoRelatorio(o); toast(`Montando o PDF: O.S. ${o.os} (${n+1} de ${lista.length})…`);
+    const fotos=[]; for(const i of idx){ const f=await fotoVGA(o.ft[i]); if(f) fotos.push({i,...f}); else falhas++; }
+    doc.setFontSize(9); const leg=doc.splitTextToSize(pdfTxt(legendaDe(o)),lw-4), cab=9+leg.length*4+5;
+    if(y+cab+bh+8>base) novaPagina();
+    doc.setFillColor(225,230,236); doc.rect(mx,y,lw,8,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.text(pdfTxt(`O.S. ${o.os} - ${String(o.un).toUpperCase()}`),mx+2,y+5.6); y+=11;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.text(leg,mx+2,y); y+=leg.length*4;
+    doc.setFontSize(7.5); doc.setTextColor(100); doc.text(pdfTxt(`Executado por: ${o.ex||"-"}   ·   Conclusão: ${o.co||"-"}   ·   Fiscal: ${o.fi||"-"}`),mx+2,y+1); doc.setTextColor(0); y+=5;
+    for(let k=0;k<fotos.length;k+=2){
+      if(y+bh+7>base){ novaPagina(); doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.text(pdfTxt(`O.S. ${o.os} - ${String(o.un).toUpperCase()} (continuação)`),mx,y); doc.setFont("helvetica","normal"); y+=4; }
+      for(let c=0;c<2&&k+c<fotos.length;c++){ const f=fotos[k+c], x=mx+c*(bw+gap); doc.setDrawColor(170); doc.rect(x,y,bw,bh);
+        const r=Math.min((bw-2)/f.dm[0],(bh-2)/f.dm[1]), w=f.dm[0]*r, h=f.dm[1]*r; doc.addImage(f.src,"JPEG",x+(bw-w)/2,y+(bh-h)/2,w,h);
+        doc.setFontSize(7.5); doc.text(pdfTxt(`Foto ${f.i+1} de ${o.ft.length} - O.S. ${o.os}`),x+bw/2,y+bh+3.6,{align:"center"}); }
+      y+=bh+7;
+    }
+    y+=4;
+  }
+  const tot=doc.getNumberOfPages(); for(let p=1;p<=tot;p++){doc.setPage(p);doc.setFontSize(7.5);doc.setTextColor(120);doc.text(pdfTxt(`Página ${p} de ${tot}  ·  gerado pelo Painel do Medidor em ${new Date().toLocaleDateString("pt-BR")}`),Wp/2,Hp-7,{align:"center"});doc.setTextColor(0)}
+  doc.save(`RELATORIO FOTOGRAFICO - ${medTag()} - EDUCACAO - ${hoje()}.pdf`);
+  toast(falhas?`PDF salvo. ${falhas} foto(s) não abriram e ficaram de fora.`:"Relatório fotográfico salvo.");
+}
+
+/* ================= CONFERÊNCIA e abas de consulta ================= */
+const tipoProb = p => String(p).replace(/\(.*|[0-9]+/g,"").replace(/\s+/g," ").trim();
+function vConf(m){
+  const R=Object.fromEntries(S.d.resumo), med=M().med, n=k=>R[k]??0, probs=S.d.problemas, tipos={};
+  probs.forEach(p=>{const t=tipoProb(p[4]);tipos[t]=(tipos[t]||0)+1});
+  const lista=S.prob?probs.filter(p=>tipoProb(p[4])===S.prob):probs, lanc=lancadas().length, valor=lancadas().reduce((a,[o,d])=>a+valorDec(d),0), futura=Object.entries(S.d.med_futura||{});
+  const fig=(cls,v,t,k)=>`<button class="fig ${cls}" ${k?`data-go="${k}"`:""}><b class="num">${v}</b><span>${esc(t)}</span></button>`;
+  m.innerHTML=`<h1>Conferência da ${esc(med)} (${esc(M().ini.slice(0,5))} a ${esc(M().fim.slice(0,5))})</h1>${fonteHTML()}
+  <div class="figs">${fig("",S.med.length,"O.S. na medição","medicao")}${fig("ok",lanc,"lançadas pelo medidor","medicao")}${fig("ok",n("   ... PRONTAS P/ APRESENTAR (nº + memória + 3 fotos + executor)"),"prontas (com nº)","medicao")}
+    ${fig("at",n("   ... COMPLETAR ANTES (risco de glosa)"),"completar antes","medicao")}${fig("",n(`${med} SEM Nº (fictícias feitas, sem nº oficial)`),"feitas sem nº oficial","medicao")}${fig("ok",valor?brl(valor):"–","valor lançado","memoria")}</div>
+  ${futura.length?`<div class="notice"><b>Atenção:</b> O.S. marcadas em medição FUTURA: ${futura.map(([k,v])=>esc(k)+" ("+v+")").join(", ")}.</div>`:""}
+  <section class="panel"><h2>Resumo (como a aba CONFERÊNCIA da Mestra)</h2><div class="tw" style="max-height:none"><table><tbody>${S.d.resumo.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n"><b>${esc(v)}</b></td></tr>`).join("")}</tbody></table></div>
+    <p class="hint" style="margin-top:6px">A trava anti-medição dupla usa o resultado da fiscalização gravado no banco (medicao_os). As listas antigas das MED 8–10 ainda não foram importadas.</p></section>
+  <section class="panel"><h2>Itens de conferência (${probs.length})</h2><div class="chips"><button class="chip ${S.prob?"":"on"}" data-p="">Todos (${probs.length})</button>${Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`<button class="chip ${S.prob===t?"on":""}" data-p="${esc(t)}">${esc(t.toLowerCase())} (${c})</button>`).join("")}</div>
+    ${tabelaSimples(["ABA","OS","UNIDADE","EXECUTOR","PROBLEMA","O QUE FAZER"],lista,1)}</section>
+  <section class="panel"><h2>O.S. emitidas no período ainda sem baixa (${S.d.emitidas_sem_baixa.length})</h2><p class="hint">Não entram na ${esc(med)} enquanto não forem concluídas.</p>${tabelaSimples(["STATUS","OS","UNIDADE","FISCAL","O QUE O FISCAL SOLICITOU"],S.d.emitidas_sem_baixa,1)}</section>
+  <section class="panel"><h2>Serviços "Executando" sem número (${S.d.executando_sem_numero.length})</h2>${tabelaSimples(["STATUS","OS","UNIDADE","EXECUTOR","O QUE O FISCAL SOLICITOU"],S.d.executando_sem_numero,1)}</section>`;
+  m.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.go}));
+  m.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{S.prob=b.dataset.p;draw()}));
+  ligaLinhas(m); S.atual={tipo:"arr",nome:"CONFERENCIA",cab:["ABA","OS","UNIDADE","EXECUTOR","PROBLEMA","O QUE FAZER"],linhas:lista,antes:S.d.resumo};
+}
+function tabelaSimples(cab,linhas,colRef){
+  if(!linhas.length) return '<div class="empty">Nada aqui.</div>';
+  return `<div class="tw"><table class="grid"><thead><tr>${cab.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${linhas.map(l=>{const o=S.byRef[String(l[colRef])];
+    return `<tr ${o?`data-id="${o.id}"`:""}>${l.map((v,i)=>i===colRef?`<td>${o?`<button class="lnk" data-id="${o.id}">${esc(v)}</button>`:esc(v)}</td>`:cab[i]==="STATUS"?`<td>${tagStatus(v)}</td>`:`<td><div class="${String(v).length>60?"lt":""}">${esc(v)}</div></td>`).join("")}</tr>`}).join("")}</tbody></table></div>`;
+}
+const COLS=[["os","OS",1],["un","UNIDADE",1],["fi","FISCAL",0],["cl","CLASSIF",0],["en","ENTRADA",0],["co","CONCLUSÃO",1],["ex","RESPONSÁVEL",1],["st","STATUS",1],["me","MEDIÇÃO",1],
+  ["so","O QUE O FISCAL SOLICITOU",0],["se","SERVIÇO EXECUTADO",1],["ma","MATERIAL (MANUAL)",0],["al","MATERIAL ALMOXARIFADO (AUTO)",0],["qi","QTDE ITENS",0],["mc","MEMÓRIA DE CÁLCULO",1],["_fotos","FOTOS",1],["as","ASSINADA",0],["va","VALIDAÇÃO ESCOLA",0]];
+const LONGAS=new Set(["so","se","ma","al","mc","va"]);
+const val=(o,k)=>k==="_fotos"?o.ft.length:(o[k]??"");
+function vTabela(m,sh){
+  const all=S.os.filter(sh.f), q=norm(S.busca[sh.k]||""), st=S.status[sh.k]||"", lim=S.lim[sh.k]||150;
+  const rows=ordena(all.filter(o=>(!st||o.st===st)&&(!q||S.idx[o.id].includes(q))),sh.k,val), cols=S.todasCols?COLS:COLS.filter(c=>c[2]), so=S.sort[sh.k], sts=[...new Set(all.map(o=>o.st).filter(Boolean))].sort();
+  m.innerHTML=`<h1>${esc(subst(sh.t))}</h1><p class="sub">${esc(subst(sh.tit))}</p>${fonteHTML()}
+  <div class="bar"><input class="in" id="busca" type="search" placeholder="Buscar nº, escola, serviço, equipe…" value="${esc(S.busca[sh.k]||"")}" aria-label="Buscar nesta aba">
+    <select class="in" id="fst" aria-label="Filtrar por status"><option value="">Todos os status (${all.length})</option>${sts.map(s=>`<option value="${esc(s)}" ${st===s?"selected":""}>${esc(s)} (${all.filter(o=>o.st===s).length})</option>`).join("")}</select>
+    <label class="chk"><input type="checkbox" id="tcols" ${S.todasCols?"checked":""}> todas as colunas</label></div>
+  <p class="hint num">${rows.length===all.length?all.length:`${rows.length} de ${all.length}`} O.S. · clique na linha para ver a ficha e as fotos</p>
+  ${rows.length?`<div class="tw"><table class="grid"><thead><tr>${cols.map(c=>`<th class="so" data-s="${c[0]}" aria-sort="${so&&so.k===c[0]?(so.d>0?"ascending":"descending"):"none"}">${esc(c[1])}${so&&so.k===c[0]?(so.d>0?" ▲":" ▼"):""}</th>`).join("")}</tr></thead><tbody>
+  ${rows.slice(0,lim).map(o=>`<tr data-id="${o.id}">${cols.map(([k])=>{const v=val(o,k);return k==="os"?`<td><button class="lnk" data-id="${o.id}">${esc(v)}</button></td>`:k==="st"?`<td>${tagStatus(v)}</td>`:k==="_fotos"?`<td class="n ${v<3?"falta":""}">${v}</td>`:`<td><div class="${LONGAS.has(k)?"lt":k==="un"?"md":""}">${esc(v)}</div></td>`}).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma O.S. com esse filtro.</div>'}
+  ${rows.length>lim?`<div class="acts"><button class="btn" id="mais">Mostrar mais ${Math.min(300,rows.length-lim)}</button><span class="hint num">faltam ${rows.length-lim}</span></div>`:""}`;
+  const b=$("#busca"); b.addEventListener("input",()=>{S.busca[sh.k]=b.value;clearTimeout(vTabela._t);vTabela._t=setTimeout(()=>{const p=b.selectionStart;S.lim[sh.k]=150;draw();wireFocus("busca",p)},220)});
+  $("#fst").addEventListener("change",e=>{S.status[sh.k]=e.target.value;S.lim[sh.k]=150;draw()}); $("#tcols").addEventListener("change",e=>{S.todasCols=e.target.checked;draw()});
+  m.querySelectorAll("th.so").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.s,c=S.sort[sh.k];S.sort[sh.k]=c&&c.k===k?(c.d>0?{k,d:-1}:null):{k,d:1};draw()}));
+  const mais=$("#mais"); if(mais) mais.addEventListener("click",()=>{S.lim[sh.k]=lim+300;draw()});
+  ligaLinhas(m); S.atual={tipo:"arr",nome:subst(sh.t),cab:[...COLS.map(c=>c[1]),"LINKS DAS FOTOS"],linhas:rows.map(o=>[...COLS.map(([k])=>val(o,k)),o.ft.join(" | ")])};
+}
+function vVinc(m){
+  const lista=S.os.filter(o=>o.ab.includes("vinc")).sort((a,b)=>String(a.pr).localeCompare(String(b.pr),"pt-BR",{numeric:true})), linhas=lista.map(o=>[o.fr||o.os,o.pr||"",o.un,o.ex,o.se]);
+  m.innerHTML=`<h1>Vinculadas</h1><p class="sub">EMERGÊNCIAS VINCULADAS — fictícia oficializada na O.S. oficial (regra do # N:1)</p>${fonteHTML()}${tabelaSimples(["FICTÍCIA","VINCULADA À OFICIAL","UNIDADE","EXECUTOR","SERVIÇO DA EMERGÊNCIA"],linhas,0)}`;
+  ligaLinhas(m); S.atual={tipo:"arr",nome:"VINCULADAS",cab:["FICTICIA","VINCULADA A OFICIAL","UNIDADE","EXECUTOR","SERVICO DA EMERGENCIA"],linhas};
+}
+function vEstilos(m){
+  const es=Object.values(S.estilos).sort((a,b)=>b.usos-a.usos);
+  m.innerHTML=`<h1>Estilos aprendidos</h1><p class="sub">O painel aprende sozinho com o que já foi lançado no banco: para cada tipo de serviço, os itens EMOP mais usados viram a primeira sugestão nas próximas O.S. do mesmo tipo.</p>
+  <section class="panel"><div class="tw" style="max-height:none"><table><thead><tr><th>Tipo de serviço</th><th>Itens EMOP mais lançados</th><th class="n">Lançamentos</th></tr></thead><tbody>
+  ${es.map(e=>`<tr><td><b>${esc(e.tipo)}</b></td><td class="num">${esc(e.cods.join(" · "))}</td><td class="n">${e.usos}</td></tr>`).join("")||'<tr><td colspan="3" class="empty">Nada aprendido ainda — lance as primeiras O.S.</td></tr>'}</tbody></table></div></section>`;
+}
+
+/* ================= botão do topo ================= */
+async function acaoTopo(){
+  const A=S.atual; if(!A) return;
+  try{
+    if(A.tipo==="relatorio"){ S.gerando=true; draw(); await geraRelatorio(); S.gerando=false; draw(); return; }
+    if(A.tipo==="memoria"){ if(!A.its.length){toast("Nenhuma O.S. lançada ainda.");return} exportaMemoria(); toast("Memória de cálculo baixada."); return; }
+    let wb, nome;
+    if(A.tipo==="medicao"){
+      const cab=["OS","UNIDADE","CONCLUSAO","RESPONSAVEL","SERVICO EXECUTADO","MEMORIA DO CAMPO","FOTOS","O QUE FALTA","TIPO (SUGESTAO)","CODIGO (SUGESTAO)","CODIGO LANCADO","QTD / CONTA","VALOR","SITUACAO"];
+      const linhas=A.rows.map(o=>{const d=decDe(o),st=statusDe(o);return [o.os,o.un,o.co,o.ex,o.se,o.mc,o.ft.length,faltaDe(o).join(", "),o.ti,o.cs,st==="aprovada"?d.itens.map(i=>i.cod).join(" + "):"",st==="aprovada"?d.itens.map(i=>`${i.expressao} = ${i.qtd} ${i.unid}`).join(" | "):"",st==="aprovada"?Math.round(valorDec(d)*100)/100:"",st==="aprovada"?"LANÇADA":st==="pulada"?"PULADA":"A LANÇAR"]});
+      wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[`PAINEL DO MEDIDOR — ${M().med} (${M().ini} a ${M().fim})`],[`Gerado em ${new Date().toLocaleString("pt-BR")} · banco lido em ${S.carregadoEm}`],[],cab,...linhas]),M().med);
+      nome=`MEDICAO ${medTag()} - lista do medidor - ${hoje()}.xlsx`;
+    } else {
+      const aoa=[[`PLANILHA MESTRA FP.094 — ${A.nome}`],[`Banco lido em ${S.carregadoEm} (painel do medidor)`],[],...(A.antes?[...A.antes,[]]:[]),A.cab,...A.linhas];
+      wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),String(A.nome).replace(/[\\\/?*\[\]:]/g,"-").slice(0,31));
+      nome=`MESTRA ${medTag()} - ${String(A.nome).replace(/[\\\/?*\[\]:"<>|]/g,"-")} - ${hoje()}.xlsx`;
+    }
+    XLSX.writeFile(wb,nome); toast("Planilha baixada.");
+  }catch(e){ S.gerando=false; draw(); toast("Não foi possível gerar agora: "+(e.message||e)); }
+}
+
+/* ================= começo ================= */
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT"){ S.d=null; telaLogin(); } });
+iniciar();
+</script>
+</body>
+</html>
