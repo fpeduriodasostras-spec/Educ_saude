@@ -269,17 +269,21 @@ async function carregar(){
   const {data:meds,error:em}=await sb.from("medicao").select("*").eq("contrato",CONTRATO_NOME).order("numero",{ascending:false});
   if(em) throw new Error("medicao: "+em.message);
   if(meds&&meds.length){ S.medicoes=meds; S.M=meds.find(m=>m.id===S.M.id)||S.M; }
-  const [itens, os, saidas, mos, lanc, jur] = await Promise.all([
+  const [itens, os, saidas, mos, lanc, jur, hist] = await Promise.all([
     todas("contrato_item","*",q=>q.eq("contrato",CONTRATO_NOME)),
     todas("os_campo","id,numero,numero_fict,fict_ref,unidade,fiscal,classificacao,entrada,conclusao,executor,status,medicao,solicitado,servico,materiais,memoria_calculo,foto_urls,assinado,contrato,par_sugerido,criado_em",q=>q.or("excluida.is.null,excluida.eq.false")),
     todas("saida_material","id,descricao,quantidade,unidade,os_ref,escola,data"),
     todas("medicao_os","*"),
     todas("medicao_lancamento","*"),
     fetch("jurisprudencia.json").then(r=>r.ok?r.json():[]).catch(()=>[]),
+    /* estilos aprendidos do histórico: o que a fiscalização aceitou nas MED 01-09 para cada tipo de serviço
+       (scripts/gera_estilos_historicos.py) */
+    fetch("estilos_historicos.json").then(r=>r.ok?r.json():{estilos:[]}).catch(()=>({estilos:[]})),
   ]);
   S.base=itens.sort((a,b)=>(a.ordem??0)-(b.ordem??0)).map(i=>({id:i.id,item:i.item||"",cod:i.codigo_emop,desc:i.descricao,unid:i.unid,preco:Number(i.preco_com_bdi),qc:i.qtd_contratada}));
   S.byCod={}; S.byItemId={}; S.ordem={}; S.base.forEach((b,i)=>{S.byCod[b.cod]=b;S.byItemId[b.id]=b;S.ordem[b.cod]=i});
   S.jur={}; (jur||[]).forEach(j=>S.jur[j.cod]=j);
+  S.hist=(hist&&hist.estilos)||[];
   S.mos=mos; S.lanc=lanc;
   montaMestra(os, saidas);
   montaDecisoes();
@@ -410,7 +414,13 @@ function montaDecisoes(){
   });
   const tipoDaOS={}; S.os.forEach(o=>{ if(o.ti) tipoDaOS[o.id]=o.ti; });
   const cont={}; S.mos.forEach(x=>{const t=tipoDaOS[x.os_id]; if(!t||x.situacao!=="lancada") return; (porMos[x.id]||[]).forEach(l=>{const b=S.byItemId[l.contrato_item_id]; if(!b) return; const k=slug(t); cont[k]=cont[k]||{tipo:t,c:{}}; cont[k].c[b.cod]=(cont[k].c[b.cod]||0)+1;})});
-  S.estilos={}; Object.entries(cont).forEach(([k,v])=>{S.estilos[k]={tipo:v.tipo,cods:Object.entries(v.c).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]),usos:Object.values(v.c).reduce((a,b)=>a+b,0)}});
+  // junta as duas fontes: o histórico das MED 01-09 e o que já foi lançado neste painel (o lançado vem primeiro)
+  S.estilos={};
+  (S.hist||[]).forEach(h=>{ S.estilos[slug(h.tipo)]={tipo:h.tipo, hist:h, usos:0, lanc:[], cods:h.cods.filter(c=>c.n_os>=Math.max(2,h.n_os*0.1)).slice(0,3).map(c=>c.cod)}; });
+  Object.entries(cont).forEach(([k,v])=>{
+    const lanc=Object.entries(v.c).sort((a,b)=>b[1]-a[1]).map(x=>x[0]), e=S.estilos[k]||{tipo:v.tipo,hist:null,cods:[]};
+    e.lanc=lanc; e.usos=Object.values(v.c).reduce((a,b)=>a+b,0); e.cods=[...new Set([...lanc,...e.cods])].slice(0,3); S.estilos[k]=e;
+  });
 }
 
 /* ================= chaves da tela ================= */
@@ -578,7 +588,7 @@ function fichaMotor(o,D,dec){
   const emD=cod=>D.itens.some(i=>i.cod===cod);
   return `<div class="bloco"><h3 style="margin-top:0">Lançamento na medição</h3>
     <label class="hint" for="legenda" style="display:block;margin:0 0 4px">Legenda da O.S. no relatório fotográfico</label><input class="in" id="legenda" style="width:100%" value="${esc(D.legenda)}">
-    ${D.estilo?`<p class="hint" style="color:var(--green);margin-top:8px"><b>Aprendido dos lançamentos:</b> ${esc(o.ti)} costuma ser lançado em ${esc(D.estilo.cods.join(", "))}</p>`:""}
+    ${D.estilo?`<p class="hint" style="color:var(--green);margin-top:8px"><b>Estilo aprendido (${D.estilo.hist?`MED 01–09: ${D.estilo.hist.n_os} O.S. de ${esc(o.ti)}`:""}${D.estilo.hist&&D.estilo.usos?" + ":""}${D.estilo.usos?`${D.estilo.usos} lançamento(s) no painel`:""}):</b> costuma ser cobrado em ${D.estilo.cods.map(c=>{const h=D.estilo.hist&&D.estilo.hist.cods.find(x=>x.cod===c);return esc(c)+(h?` (${Math.round(100*h.n_os/D.estilo.hist.n_os)}%)`:"")}).join(", ")}</p>`:""}
     <h3>O motor sugere <span class="hint" style="font-family:var(--body);font-weight:400">(azul = palpite; marque o que se aplica)</span></h3>
     <div class="cands">${D.cands.map(c=>{const j=S.jur[c.b.cod];return `<label class="cand ${emD(c.b.cod)?"sel":""}"><input type="checkbox" data-cod="${esc(c.b.cod)}" ${emD(c.b.cod)?"checked":""}>
       <div><div class="cd num">${esc(codTxt(c.b))} · ${esc(c.b.unid)} · ${brl(c.b.preco)}</div><div class="ds">${esc(c.b.desc.slice(0,160))}${c.b.desc.length>160?"…":""}</div>
@@ -806,10 +816,14 @@ function vVinc(m){
   ligaLinhas(m); S.atual={tipo:"arr",nome:"VINCULADAS",cab:["FICTICIA","VINCULADA A OFICIAL","UNIDADE","EXECUTOR","SERVICO DA EMERGENCIA"],linhas};
 }
 function vEstilos(m){
-  const es=Object.values(S.estilos).sort((a,b)=>b.usos-a.usos);
-  m.innerHTML=`<h1>Estilos aprendidos</h1><p class="sub">O painel aprende sozinho com o que já foi lançado no banco: para cada tipo de serviço, os itens EMOP mais usados viram a primeira sugestão nas próximas O.S. do mesmo tipo.</p>
-  <section class="panel"><div class="tw" style="max-height:none"><table><thead><tr><th>Tipo de serviço</th><th>Itens EMOP mais lançados</th><th class="n">Lançamentos</th></tr></thead><tbody>
-  ${es.map(e=>`<tr><td><b>${esc(e.tipo)}</b></td><td class="num">${esc(e.cods.join(" · "))}</td><td class="n">${e.usos}</td></tr>`).join("")||'<tr><td colspan="3" class="empty">Nada aprendido ainda — lance as primeiras O.S.</td></tr>'}</tbody></table></div></section>`;
+  const es=Object.values(S.estilos).sort((a,b)=>(b.usos-a.usos)||((b.hist?b.hist.n_os:0)-(a.hist?a.hist.n_os:0)));
+  const desc=c=>{const b=S.byCod[c];return b?b.desc.slice(0,70):""};
+  m.innerHTML=`<h1>Estilos aprendidos</h1><p class="sub">Para cada tipo de serviço, os itens EMOP que a fiscalização <b>aceitou nas MED 01 a 09</b> (memória de cálculo aprovada, ligada ao serviço de cada O.S.) e o que o medidor já <b>lançou neste painel</b>. Os itens marcados viram a primeira sugestão nas O.S. do mesmo tipo — é sugestão (azul); vale o que o medidor lançar.</p>
+  <section class="panel"><div class="tw" style="max-height:none"><table><thead><tr><th>Tipo de serviço</th><th>Itens mais aceitos no histórico (% das O.S. do tipo)</th><th class="n">O.S. no histórico</th><th>Lançados no painel</th></tr></thead><tbody>
+  ${es.map(e=>`<tr><td><b>${esc(e.tipo)}</b><div class="hint" style="margin:2px 0 0">sugere: ${esc(e.cods.join(" · "))}</div></td>
+    <td>${e.hist?e.hist.cods.map(c=>`<div><span class="num"><b>${esc(c.cod)}</b> · ${Math.round(100*c.n_os/e.hist.n_os)}%</span> <span class="hint">${esc(desc(c.cod))}</span></div>`).join(""):'<span class="vazio">—</span>'}</td>
+    <td class="n">${e.hist?e.hist.n_os:"–"}</td><td class="num">${e.usos?`${e.usos} · ${esc(e.lanc.slice(0,3).join(" · "))}`:'<span class="vazio">—</span>'}</td></tr>`).join("")||'<tr><td colspan="4" class="empty">Nada aprendido ainda.</td></tr>'}</tbody></table></div>
+  <p class="hint" style="margin-top:8px">Fonte do histórico: ${esc(String((S.hist||[]).length))} tipos, a partir das linhas de memória aceitas das MED 01–09 que trazem o nº da O.S. (as que trazem só o local ficam de fora).</p></section>`;
 }
 
 /* ================= botão do topo ================= */

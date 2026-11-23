@@ -10,3 +10,5 @@ front/data/atual.json
 sql/*.zip
 # carga gerada com números de O.S. (refaz com scripts/gera_aprovadas_historicas.py)
 sql/0012c_*.sql
+# listas com dados de O.S. para a equipe (não vão para o repositório público)
+entregas/
