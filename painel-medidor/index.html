@@ -340,7 +340,13 @@ function montaMestra(osBruto, saidas){
     return [txt, ss.length||"", outras.length?"CONFERIR: almox="+outras.join(" / "):""];};
   // trava anti-medição dupla: O.S. que a fiscalização APROVOU em outra medição (tabela medicao_os)
   const rotuloDe={}; S.medicoes.forEach(m=>rotuloDe[m.id]=m.rotulo);
-  const aprovadaEm={}; S.mos.filter(x=>x.resultado_fiscal==="aprovada"&&x.medicao_id!==M.id).forEach(x=>(aprovadaEm[x.os_id]=aprovadaEm[x.os_id]||[]).push(rotuloDe[x.medicao_id]||"outra medição"));
+  // (24/11) também trava a O.S. já LANÇADA em outra medição pelo painel (ex.: etiqueta MED 12 e conclusão em outubro
+  // cai na MED 11 e na MED 12 — quem lançar numa, some da outra; antes só travava a aprovada pela fiscalização)
+  const aprovadaEm={}, motivoTrava={};
+  S.mos.filter(x=>x.medicao_id!==M.id&&(x.resultado_fiscal==="aprovada"||x.situacao==="lancada")).forEach(x=>{
+    (aprovadaEm[x.os_id]=aprovadaEm[x.os_id]||[]).push(rotuloDe[x.medicao_id]||"outra medição");
+    if(x.resultado_fiscal!=="aprovada"&&motivoTrava[x.os_id]!=="APROVADA") motivoTrava[x.os_id]="LANÇADA"; else motivoTrava[x.os_id]="APROVADA";
+  });
   const noPeriodo=o=>FEITO.has(o.status)&&o.conclusao&&iso(o.conclusao)>=INI&&iso(o.conclusao)<=FIM;
   const daMedR=o=>String(o.medicao||"").trim()===MED||noPeriodo(o);
   const fotos=o=>(o.foto_urls||[]).filter(Boolean);
@@ -348,6 +354,9 @@ function montaMestra(osBruto, saidas){
   const falta=o=>{const f=[]; if(o.status!=="Concluído")f.push(`concluir (${o.status})`); if(!temConteudo(o.memoria_calculo))f.push(comoMemoria(o));
     if(fotos(o).length<3)f.push(`fotos (${fotos(o).length} de 3)`); if(!String(o.executor||"").trim())f.push("executor"); return f.join(", ");};
   const ativas=edu.filter(o=>o.status!=="Cancelada");
+  // O.S. que pelas regras cai também noutra medição ainda não aprovada (etiqueta de uma, conclusão no período da outra)
+  const outrasMed=S.medicoes.filter(m=>m.id!==M.id&&["aberta","em_conferencia","enviada"].includes(m.situacao));
+  const tambemEm=o=>outrasMed.filter(m=>String(o.medicao||"").trim()===m.rotulo||(FEITO.has(o.status)&&o.conclusao&&iso(o.conclusao)>=iso(m.inicio)&&iso(o.conclusao)<=iso(m.fim))).map(m=>m.rotulo);
   const barradas=ativas.filter(o=>daMedR(o)&&aprovadaEm[o.id]);
   const and=ativas.filter(o=>o.numero!=null&&daMedR(o)&&!aprovadaEm[o.id]).sort((a,b)=>a.numero-b.numero);
   const sem=ativas.filter(o=>o.numero==null&&daMedR(o)&&!aprovadaEm[o.id]).sort((a,b)=>refOS(a).localeCompare(refOS(b),"pt-BR",{numeric:true}));
@@ -362,7 +371,8 @@ function montaMestra(osBruto, saidas){
     if(ab.includes("and")||ab.includes("sem")) [r.ti,r.cs]=tipoEmop(o);
     if(ab.includes("completar")||ab.includes("sem")){ r.fa=falta(o); if(ab.includes("sem")) r.si=completa(o)?"PRONTA":"falta: "+falta(o); }
     if(o.par_sugerido) r.pr=String(o.par_sugerido); if(o.fict_ref) r.fr=o.fict_ref;
-    if(aprovadaEm[o.id]) r.ja=aprovadaEm[o.id];
+    if(aprovadaEm[o.id]){ r.ja=aprovadaEm[o.id]; r.jaTipo=motivoTrava[o.id]; }
+    if(ab.includes("and")||ab.includes("sem")){ const t=tambemEm(o); if(t.length) r.tambem=t; }
     return r;
   });
   // conferência (mesmos itens da aba CONFERÊNCIA da Mestra)
@@ -380,8 +390,9 @@ function montaMestra(osBruto, saidas){
     const v=materialAuto(o)[2]; if(v) p(aba,o,v.replace("CONFERIR: ","MATERIAL SAIU PARA OUTRA ESCOLA: "),"conferir unidade da O.S. x saida do almoxarifado");
     if(!FEITO.has(o.status)) p(aba,o,`MARCADA ${MED} MAS STATUS ${o.status}`,"nao medir ate concluir");
     if(o.status==="Assinatura"||o.status==="Avaliando") p(aba,o,`STATUS ${o.status} (ainda nao Concluido)`,"fechar a assinatura/avaliacao antes de medir");
+    const tb=tambemEm(o); if(tb.length) p(aba,o,`APARECE TAMBEM NA ${tb.join(" + ")} (etiqueta ${String(o.medicao||"vazia").trim()||"vazia"}, conclusao ${br(o.conclusao)})`,"lancar em UMA medicao so; depois de lancada, a outra trava sozinha");
   }
-  barradas.forEach(o=>p("FORA DA MEDIÇÃO",o,`JÁ APROVADA em ${aprovadaEm[o.id].join(" + ")} (tabela de medição) - retirada da ${MED}`,"não medir de novo; se for serviço novo, abrir outra O.S."));
+  barradas.forEach(o=>p("FORA DA MEDIÇÃO",o,motivoTrava[o.id]==="APROVADA"?`JÁ APROVADA em ${aprovadaEm[o.id].join(" + ")} (tabela de medição) - retirada da ${MED}`:`JÁ LANÇADA no painel na ${aprovadaEm[o.id].join(" + ")} - retirada da ${MED}`,motivoTrava[o.id]==="APROVADA"?"não medir de novo; se for serviço novo, abrir outra O.S.":"se é para medir aqui, desfazer o lançamento na outra medição primeiro"));
   const emit=ativas.filter(o=>o.numero!=null&&o.entrada&&iso(o.entrada)>=INI&&iso(o.entrada)<=FIM&&!daMedR(o)).sort((a,b)=>a.numero-b.numero);
   const execSem=ativas.filter(o=>o.numero==null&&o.status==="Executando"&&((o.entrada&&iso(o.entrada)>=INI&&iso(o.entrada)<=FIM)||iso(o.criado_em)>=INI)).sort((a,b)=>refOS(a).localeCompare(refOS(b)));
   const medFutura={}; edu.forEach(o=>{const m=String(o.medicao||"").match(/MED (\d+)/); if(m&&Number(m[1])>M.numero) medFutura[o.medicao]=(medFutura[o.medicao]||0)+1});
@@ -543,7 +554,7 @@ function vMedicao(m){
 }
 function linhaMed(o){
   const st=statusDe(o), d=decDe(o), fal=faltaDe(o);
-  return `<tr data-id="${o.id}" class="${st==="aprovada"?"lancada":st==="pulada"?"pulada":""}"><td><button class="lnk" data-id="${o.id}">${esc(o.os)}</button></td>
+  return `<tr data-id="${o.id}" class="${st==="aprovada"?"lancada":st==="pulada"?"pulada":""}"><td><button class="lnk" data-id="${o.id}">${esc(o.os)}</button>${o.tambem?`<div class="tag t-ru" style="margin-top:3px" title="Pelas regras cai também na ${esc(o.tambem.join(" + "))}: lance em uma só">também ${esc(o.tambem.join("+"))}</div>`:""}</td>
     <td><div class="md">${esc(o.un)}</div></td><td class="num">${esc(o.co)}</td><td>${esc(o.ex)}</td><td><div class="lt">${esc(o.se||o.so)}</div></td>
     <td>${String(o.mc||"").trim()?`<div class="lt">${esc(o.mc)}</div>`:'<span class="vazio">—</span>'}</td><td class="n ${o.ft.length<3?"falta":""}">${o.ft.length}</td>
     <td class="${fal.length?"cfalta":""}"><div class="lt" style="min-width:150px">${esc(fal.join(" · "))}</div></td><td class="csug">${esc(o.ti)}</td><td class="csug"><div class="md">${esc(o.cs)}</div></td>
@@ -574,14 +585,14 @@ function renderFicha(focoId,pos){
   dw.innerHTML=`<div class="dwbar"><h2 id="dwt">O.S. ${esc(o.os)} · ${esc(o.un)}</h2>
     ${naMed&&S.lista.length?`<button class="btn" id="ant" ${ix<=0?"disabled":""}>◀ Anterior</button><span class="hint num" style="margin:0">${ix>=0?ix+1:"–"} de ${S.lista.length}</span><button class="btn" id="prox" ${ix<0||ix>=S.lista.length-1?"disabled":""}>Próxima ▶</button>`:""}
     <button class="btn" id="fechar">Fechar</button></div>
-  <div style="margin-top:10px">${tagStatus(o.st)} ${st==="aprovada"?'<span class="tag t-ok">✓ lançada na medição</span>':st==="pulada"?'<span class="tag t-cz">pulada</span>':naMed?'<span class="tag t-pe">a lançar</span>':'<span class="tag t-cz">fora da '+esc(M().med)+'</span>'} ${pronta(o)?'<span class="tag t-ok">pronta p/ apresentar</span>':""} ${semNum(o)?'<span class="tag t-ru">sem nº oficial</span>':""} ${o.ja?`<span class="tag t-ru">já aprovada em ${esc(o.ja.join(" + "))}</span>`:""}</div>
+  <div style="margin-top:10px">${tagStatus(o.st)} ${st==="aprovada"?'<span class="tag t-ok">✓ lançada na medição</span>':st==="pulada"?'<span class="tag t-cz">pulada</span>':naMed?'<span class="tag t-pe">a lançar</span>':'<span class="tag t-cz">fora da '+esc(M().med)+'</span>'} ${pronta(o)?'<span class="tag t-ok">pronta p/ apresentar</span>':""} ${semNum(o)?'<span class="tag t-ru">sem nº oficial</span>':""} ${o.ja?`<span class="tag t-ru">${o.jaTipo==="LANÇADA"?"já lançada na":"já aprovada em"} ${esc(o.ja.join(" + "))}</span>`:""} ${o.tambem?`<span class="tag t-ru">⚠ aparece também na ${esc(o.tambem.join(" + "))} — lance em uma só</span>`:""}</div>
   ${dec&&dec.por?`<p class="hint" style="margin-top:6px">Lançada por ${esc(dec.por)}${dec.em?" em "+esc(new Date(dec.em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})):""}${dec.resultado?` · fiscalização: <b>${esc(dec.resultado)}</b>`:""}</p>`:""}
   ${fal.length&&naMed?`<div class="bloco falt"><b>O que falta (risco de glosa):</b> ${esc(fal.join(" · "))}<div class="hint" style="margin:4px 0 0">Corrija no app (memória, fotos, executor) — na MED 9/10 a fiscalização glosou tudo que veio sem isso.</div></div>`:""}
   <dl>${campos.map(([t,v])=>`<dt>${esc(t)}</dt><dd>${String(v??"").trim()?esc(v):'<span class="vazio">— nada lançado no app</span>'}</dd>`).join("")}</dl>
   <h3>Fotos (${o.ft.length})${naMed?" — marque as que vão no relatório fotográfico":""}</h3>
   ${o.ft.length?`<div class="fotos">${o.ft.map((u,i)=>{const sel=D&&D.fotos.has(i);return `<label class="foto ${sel?"sel":""}">${naMed&&!medFechada()?`<input type="checkbox" data-fi="${i}" ${sel?"checked":""} aria-label="usar a foto ${i+1} no relatório">`:""}<img src="${esc(mini(u,320))}" alt="Foto ${i+1} da O.S. ${esc(o.os)}" loading="lazy"><span class="k">${i+1}</span><a href="${esc(u)}" target="_blank" rel="noopener">abrir</a></label>`}).join("")}</div>
     ${naMed?`<p class="hint">${D.fotos.size?`${D.fotos.size} escolhida${D.fotos.size===1?"":"s"} para o relatório.`:`Nenhuma escolhida: o relatório usa as ${Math.min(6,o.ft.length)} primeiras.`}</p>`:""}`:'<p class="falta">Nenhuma foto no app.</p>'}
-  ${naMed?(medFechada()?avisoFechada():fichaMotor(o,D,dec)):`<div class="notice">Esta O.S. não está na ${esc(M().med)} pelas regras da Mestra (etiqueta ou conclusão no período)${o.ja?`; já foi aprovada em ${esc(o.ja.join(" + "))}`:""}.</div>`}`;
+  ${naMed?(medFechada()?avisoFechada():fichaMotor(o,D,dec)):`<div class="notice">Esta O.S. não está na ${esc(M().med)} pelas regras da Mestra (etiqueta ou conclusão no período)${o.ja?`; ${o.jaTipo==="LANÇADA"?"já foi lançada na":"já foi aprovada em"} ${esc(o.ja.join(" + "))}`:""}.</div>`}`;
   wireFicha(o); dw.scrollTop=topo_; if(focoId) wireFocus(focoId,pos);
 }
 function fichaMotor(o,D,dec){
